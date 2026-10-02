@@ -1,5 +1,7 @@
 {
-  "redirects": [
-    { "source": "/", "destination": "/front.html", "permanent": false }
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/front.html" }
   ]
 }

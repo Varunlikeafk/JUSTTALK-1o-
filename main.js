@@ -3,7 +3,7 @@
    Views: auth -> hub -> warp transition -> chat
    ========================================================================= */
 
-const API_URL = "https://justtalk-regen.vercel.app/front.html";
+const API_URL = "https://justtalk-1o.onrender.com/chat";
 const LS_ACCOUNTS = "jt_accounts";     // { username: password }  (local demo auth only)
 const LS_SESSION  = "jt_session";      // { username, guest }
 const LS_HISTORY  = "jt_chat_history"; // persisted chat history

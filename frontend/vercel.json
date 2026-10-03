@@ -1,0 +1,8 @@
+{
+  "framework": null,
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "redirects": [
+    { "source": "/", "destination": "/front.html", "permanent": false }
+  ]
+}

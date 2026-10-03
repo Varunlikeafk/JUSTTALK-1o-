@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="theme-color" content="#04120e">
+<title>Regen 1o (public release) — Just Talk</title>
+<!-- Apply the saved theme before first paint (same key as the landing page) -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("regen-theme");
+    if (!t) t = (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./Style.css" />
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<div class="aurora-layer" aria-hidden="true">
+  <div class="aurora a1"></div>
+  <div class="aurora a2"></div>
+  <div class="aurora a3"></div>
+</div>
+
+<div class="meteor-layer" aria-hidden="true">
+  <span class="meteor" style="--top:4%;  --delay:0s;   --dur:5.5s;"></span>
+  <span class="meteor" style="--top:18%; --delay:1.6s; --dur:6.2s;"></span>
+  <span class="meteor" style="--top:34%; --delay:3.1s; --dur:5s;"></span>
+  <span class="meteor" style="--top:52%; --delay:0.7s; --dur:6.8s;"></span>
+  <span class="meteor" style="--top:68%; --delay:2.3s; --dur:5.4s;"></span>
+  <span class="meteor" style="--top:82%; --delay:4s;   --dur:6s;"></span>
+</div>
+
+<!-- Theme toggle for splash / auth / hub (hidden in chat, which has its own in the header) -->
+<button class="theme-toggle theme-fixed" type="button" aria-label="Toggle light / dark theme" title="Switch theme">
+  <svg class="tt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <g class="tt-rays"><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g>
+    <g class="tt-core"><mask id="ttm1"><rect width="24" height="24" fill="#fff"/><circle class="tt-cut" cx="18" cy="6" r="6" fill="#000"/></mask><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none" mask="url(#ttm1)"/></g>
+  </svg>
+</button>
+
+<!-- ============ SPLASH VIEW ============ -->
+<div id="view-splash" class="view active">
+  <div class="splash-wrap">
+    <div class="splash-wordmark" id="splashWordmark">
+      <h1 class="rainbow-text">REGEN 1o <span class="pr">(public release)</span></h1>
+    </div>
+    <p class="splash-sub">Just Talk — an AI that thinks out loud</p>
+  </div>
+  <div class="splash-marquee" aria-hidden="true"><div class="marquee"><div class="mq-track">
+    <span>ROUTE <b>→</b> VERIFY <b>→</b> REASON <b>→</b> ANSWER <b>+</b> LIVE WEB SEARCH <b>+</b> VISIBLE REASONING <b>+</b> PERSISTENT CREDITS <b>+</b></span>
+    <span>ROUTE <b>→</b> VERIFY <b>→</b> REASON <b>→</b> ANSWER <b>+</b> LIVE WEB SEARCH <b>+</b> VISIBLE REASONING <b>+</b> PERSISTENT CREDITS <b>+</b></span>
+  </div></div></div>
+  <div class="splash-warn" role="note">
+    <span class="warn-ico">!</span>
+    <span><b>Heads up:</b> Regen 1o can give wrong answers because it runs on an <b>alpha variant</b> of the model. Double-check anything important.</span>
+  </div>
+  <div class="splash-hint">Tap anywhere to enter ↝</div>
+</div>
+
+<!-- ============ AUTH VIEW ============ -->
+<div id="view-auth" class="view">
+  <div class="brand-row"><span class="brand-dot"></span><span class="brand-name">Just Talk</span><a class="site-link" href="index.html">← Website</a></div>
+
+  <div class="auth-card">
+    <div class="auth-eyebrow">REGEN 1o · PUBLIC RELEASE</div>
+    <h1 class="auth-title">Think out loud with an AI that shows its work.</h1>
+    <p class="auth-sub">Live web verification, visible reasoning, and a credit system that keeps answers honest.</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabSignIn">Sign in</button>
+      <button class="auth-tab" id="tabSignUp">Sign up</button>
+    </div>
+
+    <div id="authFields">
+      <div class="field">
+        <label for="authUser">Username</label>
+        <input type="text" id="authUser" placeholder="e.g. ada" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="authPass">Password</label>
+        <input type="password" id="authPass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="authSubmit">Sign in</button>
+    <div class="auth-error" id="authError"></div>
+
+    <div class="auth-divider">or</div>
+    <button class="btn btn-ghost" id="guestBtn">Continue as guest</button>
+  </div>
+</div>
+
+<!-- ============ HUB VIEW ============ -->
+<div id="view-hub" class="view">
+  <div class="hub-top">
+    <span class="hub-user" id="hubUserLabel">Guest</span>
+    <button class="logout-link" id="hubLogout">Sign out</button>
+  </div>
+
+  <div class="hub-head">
+    <h2>Choose your model</h2>
+    <p>Pick which engine powers your conversation.</p>
+  </div>
+
+  <div class="model-grid">
+    <div class="model-card" id="cardAlpha">
+      <div class="model-glow"></div>
+      <div class="model-spotlight"></div>
+      <div class="model-badge">● ONLINE · PUBLIC RELEASE</div>
+      <h3>Regen 1o</h3>
+      <p>GPT‑OSS‑20B via Groq, with live web verification and a visible credit &amp; reasoning trail. Runs on an alpha variant, so answers can be wrong.</p>
+      <div class="model-cta launch">Launch ↗</div>
+    </div>
+
+    <div class="model-card disabled" id="cardAdaptive">
+      <div class="model-glow"></div>
+      <div class="model-spotlight"></div>
+      <div class="model-badge">COMING SOON</div>
+      <h3>Regen Adaptive</h3>
+      <p>A self-tuning successor model that adapts its reasoning depth to each question. In development.</p>
+      <div class="model-cta soon">Not yet available</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ WARP TRANSITION ============ -->
+<div id="view-warp" class="view">
+  <canvas id="warp-canvas"></canvas>
+  <div class="warp-flash"></div>
+  <div class="warp-caption">Piercing into Regen 1o…</div>
+</div>
+
+<!-- ============ CHAT VIEW ============ -->
+<div id="view-chat" class="view">
+  <div id="app-shell">
+    <div id="sidebar-overlay"></div>
+    <div id="sidebar">
+      <button id="newChatBtn" class="new-chat-btn">✎&nbsp;&nbsp;New chat</button>
+
+      <!-- Chat history -->
+      <div class="side-section-title">Chats</div>
+      <div class="history-search">
+        <input type="text" id="historySearch" placeholder="Search chats…" autocomplete="off" aria-label="Search chats">
+      </div>
+      <div class="history-list" id="historyList" aria-label="Chat history"></div>
+
+      <div class="side-section-title">Menu</div>
+      <button class="side-link" id="backToHub"><span class="ico">◧</span> Switch model</button>
+      <button class="side-link" id="aboutBtn"><span class="ico">✦</span> About Regen 1o</button>
+      <button class="side-link" id="clearHistoryBtn"><span class="ico">⟲</span> Delete all chats</button>
+
+      <div class="side-bottom">
+        <div class="profile-card">
+          <div class="avatar-sm" id="profileAvatar">G</div>
+          <div class="profile-meta">
+            <div class="profile-name" id="profileName">Guest</div>
+            <div class="profile-plan">Free tier</div>
+          </div>
+        </div>
+        <div class="toggle-card">
+          <div class="label">Web Search</div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="webSearchToggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="credit-card">
+          <div class="credit-card-title">System Credits</div>
+          <div id="creditDisplay" class="credit-value">1000</div>
+          <div class="bar-track"><div class="bar-fill" id="creditBar" style="width:100%"></div></div>
+        </div>
+        <button class="side-link" id="logoutBtn" style="border:1px solid var(--line);"><span class="ico">⏻</span> Sign out</button>
+      </div>
+    </div>
+
+    <div id="main-container">
+      <div id="header">
+        <div class="h-left">
+          <button id="menuToggle" aria-label="Open menu">☰</button>
+          <span class="brand-mark">R</span><span class="hdr-title">Regen 1o</span><span class="hdr-badge">public release</span>
+        </div>
+        <div class="h-right">
+          <span class="h-status">Web Engine Active</span>
+          <button class="theme-toggle theme-header" type="button" aria-label="Toggle light / dark theme" title="Switch theme">
+            <svg class="tt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <g class="tt-rays"><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g>
+              <g class="tt-core"><mask id="ttm2"><rect width="24" height="24" fill="#fff"/><circle class="tt-cut" cx="18" cy="6" r="6" fill="#000"/></mask><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none" mask="url(#ttm2)"/></g>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="empty-state">
+        <div class="eyebrow">⚡ <b>20B parameters</b> · Groq-hosted inference</div>
+        <h1>Agent-grade reasoning.<br><span class="hl">Groq-grade speed.</span></h1>
+        <p class="lead">Every message is routed, verified against the live web, and shipped with its reasoning. Try one:</p>
+        <div class="chip-grid">
+          <button class="chip" data-q="What's today's date?"><span class="feat-icon">⏱</span><b>What's today's date?</b><span class="pill">01 Temporal</span></button>
+          <button class="chip" data-q="Who are you?"><span class="feat-icon">◎</span><b>Who are you?</b><span class="pill">02 Identity</span></button>
+          <button class="chip" data-q="Write a 100 word paragraph on black holes"><span class="feat-icon">✎</span><b>Write a 100 word paragraph on black holes</b><span class="pill">03 Generation</span></button>
+          <button class="chip" data-q="Who founded Tesla?"><span class="feat-icon">🌐</span><b>Who founded Tesla?</b><span class="pill">04 Factual</span></button>
+        </div>
+      </div>
+
+      <div id="chat-flow"></div>
+
+      <div id="input-container">
+        <div class="input-box">
+          <input type="text" id="userInput" placeholder="Message Regen 1o...">
+          <button id="sendBtn" aria-label="Send">↑</button>
+        </div>
+        <div class="input-note">⚠ Regen 1o runs on an alpha variant and can give wrong answers. Verify important info.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="main.js"></script>
+</body>
+</html>

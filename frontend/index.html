@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Just Talk — Agent-grade reasoning. Groq-grade speed.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="index.css">
+
+
+
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--orange)"/><stop offset="1" style="stop-color:var(--violet)"/></linearGradient><symbol id="tsym" viewBox="0 0 20 24"><g fill="url(#tg)"><rect x="0" y="0" width="20" height="5.2" rx="1.8"/><rect x="7.4" y="0" width="5.2" height="24" rx="1.8"/><rect x="2.6" y="11.2" width="14.8" height="3.4" rx="1.4"/></g></symbol></defs></svg>
+
+<div class="bg-glow"><span class="g1"></span><span class="g2"></span></div>
+
+<header>
+  <nav>
+    <div class="brand"><span class="brand-mark">J</span> Just <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>alk</div>
+    <div class="nav-links nav-mobile-hide">
+      <a href="#router">How it decides</a>
+      <a href="#features">Features</a>
+      <a href="#specs">Specs</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light mode" title="Switch theme">
+  <span class="theme-icon moon">☾</span><span class="theme-icon sun">☀</span>
+</button>
+<a class="nav-cta" href="app.html">Launch app →</a>
+  </nav>
+</header>
+
+<!-- ================= REGEN PORTAL (scroll intro) ================= -->
+<div id="regen-portal"></div>
+
+
+<div class="wrap">
+
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">⚡ <b>20B parameters</b> · Groq-hosted inference</div>
+        <h1>Agent-grade reasoning.<br><span class="hl">Groq-grade speed.</span></h1>
+        <p class="lead">Just <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>alk routes every message, verifies facts against the live web, and shows you exactly how it got there — powered by GPT‑OSS‑20B on Groq.</p>
+        <div class="cta-row">
+          <a class="btn btn-solid" href="app.html">Start chatting →</a>
+          <a class="btn btn-ghost" href="#router">See how it thinks</a>
+        </div>
+      </div>
+
+      <div class="term">
+        <div class="term-top">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="term-live">just <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>alk · live</div>
+        </div>
+        <div class="term-body" id="termBody">
+          <div class="muted">Ask it something real — this talks to the live Just Talk backend.</div>
+        </div>
+        <div class="term-foot">
+          <input id="termInput" type="text" placeholder="e.g. What's today's date?">
+          <button id="termSend">↑</button>
+        </div>
+        <div class="term-meta">
+          <span id="termStatus">● backend connecting…</span>
+          <span id="termCredits"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="num">20B</div><div class="lbl">Parameters</div><div class="sub">GPT-OSS-20B, dense transformer</div></div>
+      <div class="stat-card"><div class="num">5</div><div class="lbl">Routers</div><div class="sub">Temporal, identity, generation, factual, fallback</div></div>
+      <div class="stat-card"><div class="num">Live</div><div class="lbl">Web verification</div><div class="sub">Optional, toggled per session</div></div>
+      <div class="stat-card"><div class="num">100%</div><div class="lbl">Reasoning shown</div><div class="sub">Every reply ships its trace</div></div>
+    </div>
+  </section>
+
+  <div class="marquee-wrap">
+    <div class="marquee"><div class="mq-track">
+      <span>ROUTE <b>→</b> VERIFY <b>→</b> REASON <b>→</b> ANSWER <b>+</b> LIVE WEB SEARCH <b>+</b> VISIBLE REASONING <b>+</b> PERSISTENT CREDITS <b>+</b></span>
+      <span>ROUTE <b>→</b> VERIFY <b>→</b> REASON <b>→</b> ANSWER <b>+</b> LIVE WEB SEARCH <b>+</b> VISIBLE REASONING <b>+</b> PERSISTENT CREDITS <b>+</b></span>
+    </div></div>
+  </div>
+
+  <!-- ================= ROUTER / CREDITS ================= -->
+  <section class="block" id="router">
+    <div class="eyebrow-tag">// 01 — How it decides</div>
+    <h2>Five routers. <i>One flow.</i></h2>
+    <p class="desc">Every message is checked against five routers in order — the first match wins. Nothing gets a generic answer without a reason.</p>
+
+    <div class="router-flow">
+      <div class="router-step"><b>1</b> Temporal <span class="router-arrow">→</span></div>
+      <div class="router-step"><b>2</b> Identity <span class="router-arrow">→</span></div>
+      <div class="router-step"><b>3</b> Generation <span class="router-arrow">→</span></div>
+      <div class="router-step"><b>4</b> Factual <span class="router-arrow">→</span></div>
+      <div class="router-step"><b>5</b> Fallback</div>
+    </div>
+
+    <div class="credit-demo">
+      <div class="credit-card2">
+        <h4>Verified answer <span style="color:var(--green)">+50</span></h4>
+        <div class="bar-row"><span style="width:70px">Credits</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><span>820</span></div>
+        <p style="color:var(--text-dim);font-size:12.5px;margin-top:8px;">Web search confirms the claim, or the model completes cleanly. Credits go up.</p>
+      </div>
+      <div class="credit-card2">
+        <h4>Verification failure <span style="color:#ff4d6d">-100</span></h4>
+        <div class="bar-row"><span style="width:70px">Credits</span><div class="bar-track"><div class="bar-fill neg" style="width:38%"></div></div><span>380</span></div>
+        <p style="color:var(--text-dim);font-size:12.5px;margin-top:8px;">Below 700, "careful mode" kicks in — the model leans harder on evidence and flags uncertainty. Going offline or turning search off never costs credits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= NEURAL / ROUTER MAP ================= -->
+  <section class="block">
+    <div class="net-card">
+      <canvas id="netCanvas"></canvas>
+      <div class="net-copy">
+        <div class="eyebrow-tag">// Inside the session</div>
+        <h2>One agent.<br>Every message routed live.</h2>
+        <div class="net-hint">▷ Move your cursor through the network</div>
+      </div>
+      <div class="net-counter">
+        <span class="dot"></span>
+        <div><b id="msgCounter">0</b><br><span>messages routed since you arrived</span></div>
+      </div>
+      <div class="net-stats">
+        <div class="net-pill"><b>20B</b><span>PARAMS</span></div>
+        <div class="net-pill"><b>0.6</b><span>TEMP</span></div>
+        <div class="net-pill"><b>4096</b><span>MAX TOKENS</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FEATURES ================= -->
+  <section class="block" id="features">
+    <div class="eyebrow-tag">// 02 — Features</div>
+    <h2>Small setup. <i>Real agent work.</i></h2>
+    <p class="desc">Everything Just <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>alk ships with, out of the box.</p>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <h3>Groq inference</h3>
+        <p>Runs on Groq's LPU hardware for fast, streaming-ready responses.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔎</div>
+        <h3>Live web search</h3>
+        <p>Optional DuckDuckGo lookups ground factual and generation queries in current sources.</p>
+        <div class="pill-row"><span class="pill">force_google_scrape()</span><span class="pill">maybe_scrape()</span></div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🧭</div>
+        <h3>Five-stage routing</h3>
+        <p>Temporal, identity, generation, factual, and fallback routers — each with its own logic.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🧠</div>
+        <h3>Visible reasoning</h3>
+        <p>Reasoning is requested in parsed form and shown in a collapsible trace, not thrown away.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💾</div>
+        <h3>Persistent credits</h3>
+        <p>A reliability score saved to disk — survives restarts and reloads, not reset to 1000 every session.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔓</div>
+        <h3>Self-hostable</h3>
+        <p>Flask + CORS underneath. Point the frontend at your own server and run it anywhere.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SPECS ================= -->
+  <section class="block" id="specs">
+    <div class="eyebrow-tag">// 03 — Model card</div>
+    <h2>Small footprint. <i>Real specs.</i></h2>
+    <p class="desc" style="margin-bottom:26px;">What's actually running under Just <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>alk.</p>
+
+    <div class="specs-grid">
+      <div class="ticket">
+        <div class="ticket-top"><span>JUST <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>ALK</span><span>NO. 0001</span></div>
+        <div class="ticket-num">20<span>B</span></div>
+        <div class="ticket-tag">parameters · agentic · Groq-hosted</div>
+        <div class="ticket-rows">
+          <div><span>MODEL</span><b>openai/gpt-oss-20b</b></div>
+          <div><span>HOST</span><b>Groq</b></div>
+          <div><span>TEMPERATURE</span><b>0.6</b></div>
+          <div><span>MAX TOKENS</span><b>4096</b></div>
+          <div><span>REASONING</span><b>Parsed, visible</b></div>
+          <div><span>TOOL CALLING</span><b>Live web search</b></div>
+          <div><span>HISTORY WINDOW</span><b>Last 12 turns</b></div>
+          <div><span>DEPLOYMENT</span><b>Flask + CORS, self-hostable</b></div>
+        </div>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-tabs"><div class="code-tab active">fetch</div><div class="code-tab">curl</div></div>
+        <pre><span class="c">// call your own Just Talk backend</span>
+<span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">"https://your-backend.onrender.com/chat"</span>, {
+  method: <span class="s">"POST"</span>,
+  headers: { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> },
+  body: JSON.stringify({
+    message: <span class="s">"Summarize today's tickets"</span>,
+    history: [],
+    web_search_enabled: <span class="k">true</span>
+  })
+});
+<span class="k">const</span> data = <span class="k">await</span> res.json();
+console.log(data.reply, data.thought, data.credits);</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FAQ ================= -->
+  <section class="block" id="faq">
+    <div class="faq-grid">
+      <div>
+        <div class="eyebrow-tag">// 04 — FAQ</div>
+        <h2>Questions,<br>answered.</h2>
+      </div>
+      <div>
+        <div class="faq-item">
+          <div class="faq-q"><span><span class="n">01</span>How can a 20B model feel this fast?</span><span class="plus">+</span></div>
+          <div class="faq-a"><p>It runs on Groq's LPU inference hardware, which streams tokens far faster than typical GPU-hosted endpoints at this size.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q"><span><span class="n">02</span>Does turning off web search cost credits?</span><span class="plus">+</span></div>
+          <div class="faq-a"><p>No. Disabling search, or the search backend being unreachable, never deducts credits — only a genuine verification failure does.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q"><span><span class="n">03</span>Can I run this on my own hardware?</span><span class="plus">+</span></div>
+          <div class="faq-a"><p>Yes — it's a plain Flask app with CORS enabled. Point the frontend's API URL at wherever you deploy it.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q"><span><span class="n">04</span>What happens below 700 credits?</span><span class="plus">+</span></div>
+          <div class="faq-a"><p>"Careful mode" turns on: the system prompt asks the model to lean harder on web context and flag anything it isn't sure of.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FINAL CTA ================= -->
+  <section class="block">
+    <div class="cta-panel">
+      <div class="eyebrow">20B params · Groq-fast</div>
+      <h2>Ask fast.<br>Verify faster.</h2>
+      <p>Chat with Just <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>alk directly — live web verification and visible reasoning included.</p>
+      <div class="cta-row">
+        <a class="btn btn-solid" href="app.html">Start chatting →</a>
+        <a class="btn btn-ghost" href="#top">Back to the top</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="brand"><span class="brand-mark">J</span> © 2026 Just <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>alk</div>
+    <div class="flinks">
+      <a href="#router">How it decides</a>
+      <a href="#features">Features</a>
+      <a href="#specs">Specs</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </footer>
+</div>
+
+<script src="index.js"></script>
+<script src="demo.js"></script>
+
+
+</body>
+</html>

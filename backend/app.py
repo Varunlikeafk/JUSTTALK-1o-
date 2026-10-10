@@ -3,6 +3,7 @@ import json
 import datetime
 import time
 import re
+from zoneinfo import ZoneInfo
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -13,11 +14,12 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # GROQ API CLIENT INTEGRATION
-# Hardcoded for local testing. Do NOT push this file to a public GitHub repo
-# or share it anywhere with this key still in it — rotate the key on
-# console.groq.com if that ever happens.
+# Read from the environment. Never commit the key to a public repo.
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 groq_client = Groq(api_key=GROQ_API_KEY)
+
+MODEL_ID = "openai/gpt-oss-20b"
+IST = ZoneInfo("Asia/Kolkata")
 
 # ---------------------------------------------------------------------------
 # PERSISTENT CREDIT SYSTEM
@@ -53,23 +55,84 @@ def adjust_credits(delta):
     return SYSTEM_CREDITS
 
 
-BASE_SYSTEM_PROMPT = (
-    "You are JUSTTALK 1.1 ALPHA, an intelligent AI assistant. "
-    "Strictly follow any word count, length, or format constraints specified in the "
-    "user's request (for example '200 words' or '3 paragraphs') and match them as "
-    "closely as possible. If you do not have verified or reliable information about "
-    "something, clearly say you are unsure instead of inventing facts, names, dates, "
-    "or figures. When you write code or any multi-line snippet meant to be copied, "
-    "always wrap it in a fenced code block with triple backticks and the language name."
+# ---------------------------------------------------------------------------
+# TIME, IDENTITY AND WEB-SEARCH PATTERNS
+# ---------------------------------------------------------------------------
+def now_ist():
+    """Current time in India (the product's audience), not the server's UTC clock."""
+    return datetime.datetime.now(IST)
+
+
+# Only explicit date/time questions go to the clock. Plain words like "year"
+# or "today" inside other questions no longer hijack the answer.
+TEMPORAL_RE = re.compile(
+    r"(?i)\b(what(?:'s| is)?\s+(?:the\s+)?(?:today'?s\s+)?(?:date|time|day|year)"
+    r"|today'?s date|current (?:date|time)|what day is it|what year is it"
+    r"|what time is it|date today)\b"
 )
 
-STRICT_MODE_ADDENDUM = (
-    " Your system credit score is currently LOW because of recent errors or "
-    "unverified answers. Work extra carefully on this response: lean heavily "
-    "on any web context provided below, double-check every factual claim, "
-    "keep the answer precise, and explicitly flag anything you are not fully "
-    "certain about instead of guessing."
+IDENTITY_RE = re.compile(
+    r"(?i)\b(who are you|your name|what is your name|what'?s your name"
+    r"|who (?:made|created|developed|built|founded) you"
+    r"|who (?:is|'s) your (?:founder|developer|creator)"
+    r"|what model are you|which model are you|are you (?:gpt|chatgpt))\b"
 )
+
+WEB_CAPABILITY_RE = re.compile(
+    r"(?i)\b(do you have (?:web|internet) (?:search|access)|can you search"
+    r"|are you connected to the (?:internet|web)|do you (?:search|browse) the (?:web|internet))\b"
+)
+
+# Questions whose answer can change over time: these always get a fresh search.
+CURRENT_INFO_RE = re.compile(
+    r"(?i)\b(latest|current|currently|today|tonight|now|news|price|weather|score"
+    r"|recent|this week|live|stock|rate|2025|2026)\b"
+)
+
+WEB_FILLER_RE = (
+    r"(?i)\b(write|create|draft|paragraph|essay|explain|summary|summarize|"
+    r"tell me|please|give me|words?|on|about|a|an|the)\b"
+)
+
+
+# ---------------------------------------------------------------------------
+# SYSTEM PROMPT (name, founder, web search and the real date)
+# ---------------------------------------------------------------------------
+def build_system_prompt(strict_mode=False):
+    now = now_ist()
+    prompt = (
+        f"Current date and time: {now.strftime('%A, %B %d, %Y, %I:%M %p')} IST (India). "
+        "Treat this as the true date. Your training data may be out of date, so never "
+        "state a year or 'latest' fact from memory. Use the web search results instead.\n\n"
+
+        "Your name is Regen 1o (public release), the AI assistant of Just Talk. "
+        "Regen 1o was developed by justtalk, and its founder is Varun Pant. "
+        "Always introduce yourself as Regen 1o. Do not call yourself GPT, ChatGPT, "
+        "OpenAI, or JUSTTALK 1.1 ALPHA. If asked what model you run on, answer honestly: "
+        "Regen 1o is an alpha variant built on the open-weight openai/gpt-oss-20b model, "
+        "served by Groq.\n\n"
+
+        "You have live web search. The server searches the web for current questions and "
+        "passes the results to you in the message under 'Web search results'. When those "
+        "results are present, base current facts on them and name the source URL. If no "
+        "results are provided, say that you are answering from your own knowledge and it "
+        "may be out of date.\n\n"
+
+        "Strictly follow any word count, length, or format constraints specified in the "
+        "user's request (for example '200 words' or '3 paragraphs') and match them as "
+        "closely as possible. If you do not have verified or reliable information about "
+        "something, clearly say you are unsure instead of inventing facts, names, dates, "
+        "or figures. When you write code or any multi-line snippet meant to be copied, "
+        "always wrap it in a fenced code block with triple backticks and the language name."
+    )
+    if strict_mode:
+        prompt += (
+            " Your system credit score is currently LOW because of recent errors or "
+            "unverified answers. Work extra carefully on this response: lean heavily "
+            "on any web results provided, double-check every factual claim, keep the "
+            "answer precise, and explicitly flag anything you are not fully certain about."
+        )
+    return prompt
 
 
 def clean_hallucinations(text):
@@ -100,55 +163,66 @@ def extract_clean_topic(user_input, history=None):
     return clean.upper() if len(clean) >= 2 else user_input.upper()
 
 
-# BUG FIX: "is offline" detection for the web-search step.
-# Previously ANY failure (including the user simply switching web search
-# off, or DNS/connection errors when the box has no internet) was treated
-# the same as "verification failed" and cost -100 credits. Now we tell
-# apart three cases: disabled-by-user, genuinely offline/network-down, and
-# an actual empty-result search — only the last one is still penalised
-# later in chat().
-def force_google_scrape(query):
+# ---------------------------------------------------------------------------
+# WEB SEARCH
+# ---------------------------------------------------------------------------
+def web_search(query, web_search_enabled=True):
+    """Return (results, ok, info).
+
+    info is the source URL on success, or a DISABLED / OFFLINE: / ERROR: prefixed
+    message on failure, which the router uses to decide whether to penalise.
+    """
+    if not web_search_enabled:
+        return None, False, "DISABLED: Web search turned off by user."
+
+    clean_q = re.sub(WEB_FILLER_RE, " ", query)
+    clean_q = re.sub(r"\s+", " ", clean_q).strip() or query
+
+    is_current = bool(CURRENT_INFO_RE.search(query))
+    if is_current:
+        clean_q = f"{clean_q} {now_ist().year}"
+
     try:
-        clean_q = re.sub(r'(?i)(write|create|draft|paragraph|essay|on|about|a|an|the|words|word)', '', query).strip()
-        if not clean_q:
-            clean_q = query
-
         with DDGS() as ddgs:
-            results = list(ddgs.text(clean_q, max_results=2))
+            results = []
+            # For time-sensitive questions, first ask for results from the last day.
+            if is_current:
+                results = list(ddgs.text(clean_q, max_results=4, timelimit="d"))
+            # Fall back to an unrestricted search if nothing recent came back.
+            if not results:
+                results = list(ddgs.text(clean_q, max_results=4))
 
+        results = [r for r in results if r.get("body")]
         if results:
-            snippet = " ".join([r.get('body', '') for r in results if r.get('body')])
-            source_url = results[0].get('href', 'Web Stream')
-            if snippet:
-                clean_text = re.sub(r'\s+', ' ', snippet).strip()
-                return clean_text[:400] + "...", True, source_url
-
+            return results, True, results[0].get("href", "Web Stream")
         return None, False, "No search snippets returned."
     except Exception as e:
         err_str = str(e)
         offline_signals = ["NameResolutionError", "ConnectionError", "Max retries",
-                            "Failed to establish", "Network is unreachable", "Timeout",
-                            "getaddrinfo failed", "RatelimitException"]
+                           "Failed to establish", "Network is unreachable", "Timeout",
+                           "getaddrinfo failed", "RatelimitException"]
         is_offline = any(sig.lower() in err_str.lower() for sig in offline_signals)
         prefix = "OFFLINE:" if is_offline else "ERROR:"
         return None, False, f"{prefix}{err_str}"
 
 
-def maybe_scrape(topic, web_search_enabled):
-    if not web_search_enabled:
-        return None, False, "DISABLED: Web search turned off by user."
-    return force_google_scrape(topic)
+def web_context_block(results):
+    """Format search results for the model, with the time they were fetched."""
+    stamp = now_ist().strftime("%A, %B %d, %Y %I:%M %p IST")
+    lines = [f"Web search results (retrieved {stamp}):"]
+    for i, r in enumerate(results, 1):
+        body = re.sub(r"\s+", " ", r.get("body", "")).strip()[:500]
+        lines.append(f"[{i}] {r.get('title', '')} ({r.get('href', '')})\n{body}")
+    return "\n".join(lines)
 
 
+# ---------------------------------------------------------------------------
+# MODEL CALL
+# ---------------------------------------------------------------------------
 def generate_llama_response(prompt_text, history_list, strict_mode=False):
     try:
-        system_content = BASE_SYSTEM_PROMPT + (STRICT_MODE_ADDENDUM if strict_mode else "")
-        messages = [{"role": "system", "content": system_content}]
+        messages = [{"role": "system", "content": build_system_prompt(strict_mode)}]
 
-        # BUG FIX: history window bumped from 6 -> 12 turns so the model
-        # actually remembers more of the conversation (this is what most of
-        # the "history isn't working" reports were about — the model simply
-        # wasn't being shown enough of the past turns to stay coherent).
         for turn in history_list[-12:]:
             role = "user" if turn.get("role") == "user" else "assistant"
             content = turn.get("content", "")
@@ -157,13 +231,8 @@ def generate_llama_response(prompt_text, history_list, strict_mode=False):
 
         messages.append({"role": "user", "content": prompt_text})
 
-        # BUG FIX: reasoning_format was "hidden", which throws the model's
-        # actual reasoning away entirely — the UI's "Thinking Process" box
-        # was only ever showing our own hand-written log lines, never the
-        # model's real chain of thought. Switched to "parsed" so the raw
-        # reasoning comes back in its own field and we can surface it.
         completion = groq_client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model=MODEL_ID,
             messages=messages,
             temperature=0.6,
             max_tokens=4096,
@@ -189,14 +258,14 @@ def generate_llama_response(prompt_text, history_list, strict_mode=False):
 
 
 def build_thought(base_log, reasoning):
-    """Append the model's real reasoning (if any) under the routing log line,
-    so the frontend 'thinking' box shows the full trace instead of just the
-    one-line router summary."""
     if reasoning:
         return f"{base_log}\n\n--- Model reasoning ---\n{reasoning}"
     return base_log
 
 
+# ---------------------------------------------------------------------------
+# CHAT ENDPOINT
+# ---------------------------------------------------------------------------
 @app.route("/chat", methods=["POST", "OPTIONS"])
 def chat():
     if request.method == "OPTIONS":
@@ -224,26 +293,52 @@ def chat():
     active_topic = extract_clean_topic(user_message, history)
     is_low_credit = SYSTEM_CREDITS < 700
     mode_prefix = "🛡️ [CAREFUL MODE: Low Credits <700] Verifying extra carefully. " if is_low_credit else ""
+    searched = False  # set once a web search has run for this request
 
-    # 1. TEMPORAL ROUTER
-    time_keywords = ["date", "today", "time", "day is it", "current date", "year"]
-    if any(word in msg_lower for word in time_keywords):
-        now = datetime.datetime.now()
-        current_date_str = now.strftime("%A, %B %d, %Y (%I:%M %p)")
+    # 1. TEMPORAL ROUTER (explicit date/time questions only)
+    if TEMPORAL_RE.search(user_message):
+        now = now_ist()
+        current_date_str = now.strftime("%A, %B %d, %Y (%I:%M %p IST)")
         adjust_credits(50)
         return jsonify({
             "reply": f"Today's date and time is: **{current_date_str}**",
-            "thought": f"🎯 SYSTEM ROUTER: Evaluated system clock. +50 Credits Awarded! (Total: {SYSTEM_CREDITS})",
+            "thought": f"🎯 SYSTEM ROUTER: Evaluated system clock (India time). +50 Credits Awarded! (Total: {SYSTEM_CREDITS})",
             "response_time": round(time.time() - start_time, 2),
             "credits": SYSTEM_CREDITS
         })
 
     # 2. IDENTITY ROUTER
-    if any(q in msg_lower for q in ["who are you", "your name", "what is your name"]):
+    if IDENTITY_RE.search(user_message):
         adjust_credits(50)
         return jsonify({
-            "reply": "I am JUSTTALK 1.1 ALPHA, powered by GPT-OSS-20B (via Groq) with real-time web verification.",
+            "reply": (
+                "I am Regen 1o (public release), the AI assistant of Just Talk. "
+                "I was developed by justtalk, and my founder is Varun Pant. "
+                "I run on an alpha variant of the open-weight openai/gpt-oss-20b model "
+                "served by Groq, and I can search the web for current information."
+            ),
             "thought": f"Identity query matched. +50 Credits Awarded! (Total: {SYSTEM_CREDITS})",
+            "response_time": round(time.time() - start_time, 2),
+            "credits": SYSTEM_CREDITS
+        })
+
+    # 2b. WEB CAPABILITY ROUTER (answers "do you have web search?" correctly)
+    if WEB_CAPABILITY_RE.search(user_message):
+        if web_search_enabled:
+            reply = (
+                "Yes. I have live web search. For questions about current events, prices, "
+                "or other things that change, the server searches the web and I answer from "
+                "those results, naming the sources. The Web Search toggle in the sidebar "
+                "turns it on or off."
+            )
+        else:
+            reply = (
+                "I have web search, but it is currently turned off in the sidebar, so I am "
+                "answering from my own knowledge. Turn the Web Search toggle on to get live results."
+            )
+        return jsonify({
+            "reply": reply,
+            "thought": "Web capability query matched. No credits changed.",
             "response_time": round(time.time() - start_time, 2),
             "credits": SYSTEM_CREDITS
         })
@@ -251,11 +346,12 @@ def chat():
     # 3. GENERATION / TASK ROUTER
     generation_keywords = ["write", "create", "draft", "paragraph", "essay", "summary", "explain", "code", "words"]
     if any(word in msg_lower for word in generation_keywords):
-        scraped_text, is_verified, audit_info = maybe_scrape(active_topic, web_search_enabled)
+        results, is_verified, audit_info = web_search(active_topic, web_search_enabled)
+        searched = True
 
         gen_prompt = user_message
-        if is_verified and scraped_text:
-            gen_prompt += f"\n\nContext reference from web search: {scraped_text}"
+        if is_verified:
+            gen_prompt += "\n\n" + web_context_block(results)
 
         llama_output, success, reasoning = generate_llama_response(gen_prompt, history, strict_mode=is_low_credit)
 
@@ -289,33 +385,32 @@ def chat():
     fallback_prefix = ""
 
     if is_factual_query:
-        scraped_text, is_verified, audit_info = maybe_scrape(active_topic, web_search_enabled)
-        if is_verified and scraped_text:
+        results, is_verified, audit_info = web_search(active_topic, web_search_enabled)
+        searched = True
+        if is_verified:
             adjust_credits(50)
+            snippet = re.sub(r"\s+", " ", results[0].get("body", "")).strip()[:400] + "..."
             return jsonify({
-                "reply": scraped_text,
+                "reply": snippet,
                 "thought": f"{mode_prefix}✅ WEB VERIFIED | Source: {audit_info}. +50 Credits Awarded!",
                 "response_time": round(time.time() - start_time, 2),
                 "credits": SYSTEM_CREDITS
             })
+        if audit_info.startswith("DISABLED") or audit_info.startswith("OFFLINE"):
+            reason = "disabled by user" if audit_info.startswith("DISABLED") else "web search unreachable (offline)"
+            fallback_prefix = f"ℹ️ No penalty — {reason}. Falling back to model knowledge. "
         else:
-            # BUG FIX: only deduct credits for a genuine verification failure.
-            # If the user turned web search off, or the search backend is
-            # simply unreachable (offline), that isn't the model's fault, so
-            # no penalty is applied in either of those two cases anymore.
-            if audit_info.startswith("DISABLED") or audit_info.startswith("OFFLINE"):
-                reason = "disabled by user" if audit_info.startswith("DISABLED") else "web search unreachable (offline)"
-                fallback_prefix = f"ℹ️ No penalty — {reason}. Falling back to model knowledge. "
-            else:
-                adjust_credits(-100)
-                fallback_prefix = f"⚠️ PENALTY (-100 Credits) | Web Verification Failed: {audit_info}. "
+            adjust_credits(-100)
+            fallback_prefix = f"⚠️ PENALTY (-100 Credits) | Web Verification Failed: {audit_info}. "
 
     # 5. CONVERSATIONAL FALLBACK
+    # Attach fresh web results whenever the question is about something that changes,
+    # or when the answer has to be checked carefully (low credits).
     fallback_prompt = user_message
-    if is_low_credit:
-        scraped_text, is_verified, audit_info = maybe_scrape(active_topic, web_search_enabled)
-        if is_verified and scraped_text:
-            fallback_prompt += f"\n\nContext reference from web search: {scraped_text}"
+    if not searched and (is_low_credit or CURRENT_INFO_RE.search(user_message)):
+        results, is_verified, audit_info = web_search(active_topic, web_search_enabled)
+        if is_verified:
+            fallback_prompt += "\n\n" + web_context_block(results)
 
     bot_reply, success, reasoning = generate_llama_response(fallback_prompt, history, strict_mode=is_low_credit)
 
@@ -324,7 +419,7 @@ def chat():
     else:
         adjust_credits(-100)
         thought_log = fallback_prefix + f"⚠️ PENALTY APPLIED (-100 Credits) | Model error: {bot_reply}"
-        bot_reply = "I am JUSTTALK 1.1 ALPHA. Unable to process query."
+        bot_reply = "I am Regen 1o. Unable to process query."
 
     return jsonify({
         "reply": bot_reply,

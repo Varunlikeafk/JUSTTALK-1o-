@@ -9,11 +9,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from duckduckgo_search import DDGS
 from groq import Groq
-import logging
-
-import llm_reliability
-
-logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -21,12 +16,9 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # GROQ API CLIENT INTEGRATION
 # Read from the environment. Never commit the key to a public repo.
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-# max_retries=0: llm_reliability owns retries/backoff/fallback so they are not doubled.
-groq_client = Groq(api_key=GROQ_API_KEY, max_retries=0)
+groq_client = Groq(api_key=GROQ_API_KEY)
 
 MODEL_ID = "openai/gpt-oss-20b"
-# Fallback models are OFF until GROQ_FALLBACK_MODELS is set (comma-separated Groq model ids).
-MODELS = llm_reliability.models_from_env(MODEL_ID)
 IST = ZoneInfo("Asia/Kolkata")
 
 # ---------------------------------------------------------------------------
@@ -239,10 +231,13 @@ def generate_llama_response(prompt_text, history_list, strict_mode=False):
 
         messages.append({"role": "user", "content": prompt_text})
 
-        completion = llm_reliability.chat_completion(
-            groq_client, MODELS, messages,
+        completion = groq_client.chat.completions.create(
+            model=MODEL_ID,
+            messages=messages,
             temperature=0.6,
             max_tokens=4096,
+            reasoning_effort="low",
+            reasoning_format="parsed",
         )
         message = completion.choices[0].message
         content = message.content

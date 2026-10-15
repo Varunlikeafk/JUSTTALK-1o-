@@ -73,12 +73,7 @@ function drawNet() {
 }
 initNet();
 drawNet();
-let lastNetW = window.innerWidth;
-window.addEventListener("resize", () => {
-  if (window.innerWidth === lastNetW) return;   // height-only resize = address bar / keyboard
-  lastNetW = window.innerWidth;
-  initNet();
-});
+window.addEventListener("resize", initNet);
 window.addEventListener("mousemove", e => { netMouse.x = e.clientX; netMouse.y = e.clientY; });
 window.addEventListener("mouseleave", () => { netMouse.x = -9999; netMouse.y = -9999; });
 
@@ -229,7 +224,7 @@ function initWarp() {
   warpCanvas.width = window.innerWidth;
   warpCanvas.height = window.innerHeight;
   warpStars = [];
-  for (let i = 0, n = window.innerWidth < 760 ? 350 : 700; i < n; i++) {
+  for (let i = 0; i < 700; i++) {
     warpStars.push({
       x: (Math.random() - 0.5) * warpCanvas.width,
       y: (Math.random() - 0.5) * warpCanvas.height,
@@ -440,7 +435,7 @@ function newConvo() {
   renderHistoryList();
   closeSidebarMobile();
   const input = document.getElementById("userInput");
-  if (input && !window.matchMedia("(pointer:coarse)").matches) input.focus();
+  if (input) input.focus();
 }
 
 function resetToFreshIfNeeded(wasActive) {
@@ -697,7 +692,7 @@ function loadHistoryIntoUI() {
               ${routerChips(detectRouter(turn.thought))}
               <div class="think-body"><div class="think-content" id="${thinkId}">${escapeHtml(turn.thought)}</div></div>
             </div>` : "";
-      const pill = turn.time != null ? `<span class="meta-pill">⚡ ${turn.time}s</span>` : "";
+      const pill = turn.time != null ? `<span class="meta-pill"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg> ${turn.time}s</span>` : "";
       html += `
         <div class="chat-row bot-row">
           <div class="avatar bot-avatar">R</div>
@@ -801,7 +796,7 @@ async function send() {
           </div>
           <div class="bot-bubble" id="${msgId}">${renderBotContent(data.reply || "")}</div>
           <div class="meta-row">
-            <span class="meta-pill">⚡ ${data.response_time}s</span>${deltaPill}
+            <span class="meta-pill"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg> ${data.response_time}s</span>${deltaPill}
             <button class="copy-msg-btn" onclick="copyWholeMessage('${msgId}', this)">Copy</button>
           </div>
         </div>
@@ -1063,48 +1058,3 @@ document.querySelectorAll(".theme-toggle").forEach(btn => {
   btn.addEventListener("click", () => switchTheme(btn));
 });
 applyTheme(currentTheme());
-
-
-// ---------------------------------------------------------------------
-// Mobile + tablet viewport handling
-//  --app-h / --app-top : the *visible* viewport (shrinks when the keyboard opens)
-//  --input-h           : real height of the input bar, so the empty-state never overlaps it
-// ---------------------------------------------------------------------
-(function () {
-  const root = document.documentElement;
-  const vv = window.visualViewport;
-
-  function syncViewport() {
-    const zoomed = vv && vv.scale > 1.01;          // pinch-zoom must not shrink the layout
-    const h = vv && !zoomed ? vv.height : window.innerHeight;
-    const top = vv && !zoomed ? vv.offsetTop : 0;
-    root.style.setProperty("--app-h", h + "px");
-    root.style.setProperty("--app-top", top + "px");
-    const flow = document.getElementById("chat-flow");
-    // keyboard opened/closed while chatting: keep the latest message in view
-    if (flow && document.body.dataset.view === "view-chat" && document.activeElement &&
-        document.activeElement.id === "userInput") {
-      flow.scrollTop = flow.scrollHeight;
-    }
-  }
-  syncViewport();
-  if (vv) { vv.addEventListener("resize", syncViewport); vv.addEventListener("scroll", syncViewport); }
-  window.addEventListener("resize", syncViewport);
-  window.addEventListener("orientationchange", () => setTimeout(syncViewport, 250));
-
-  function watchInputBar() {
-    const bar = document.getElementById("input-container");
-    if (!bar) return;
-    const setH = () => root.style.setProperty("--input-h", bar.offsetHeight + parseFloat(getComputedStyle(bar).marginBottom || 0) + "px");
-    setH();
-    if (window.ResizeObserver) new ResizeObserver(setH).observe(bar);
-    else window.addEventListener("resize", setH);
-  }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", watchInputBar);
-  else watchInputBar();
-
-  // iOS: make sure the focused input is scrolled into the visible area
-  document.addEventListener("focusin", (e) => {
-    if (e.target && e.target.id === "userInput") setTimeout(syncViewport, 300);
-  });
-})();

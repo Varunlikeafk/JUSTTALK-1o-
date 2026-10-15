@@ -114,7 +114,7 @@
       q + "[data-gp-motion=on]:has([data-gp-content]:focus-within) [data-gp-field]{clip-path:none!important;}" +
       q + "[data-gp-motion=on] [data-gp-content]:focus-within{opacity:1;pointer-events:auto;}" +
       q + ":has([data-gp-content]:focus-within) [data-gp-caption]," + q + ":has([data-gp-content]:focus-within) [data-gp-marks]{opacity:0;}" +
-      "@media(prefers-reduced-motion:reduce){" + q + " [data-gp-pin]{position:relative!important;} " + q + " [data-gp-content]{margin-top:0!important;opacity:1!important;background:var(--gp-field)!important;min-height:0;padding-block:64px;} " + q + " [data-gp-caption]{opacity:1!important;} " + q + " [data-gp-hint]{display:none;}}" +
+      "@media(not all){" + q + " [data-gp-pin]{position:relative!important;} " + q + " [data-gp-content]{margin-top:0!important;opacity:1!important;background:var(--gp-field)!important;min-height:0;padding-block:64px;} " + q + " [data-gp-caption]{opacity:1!important;} " + q + " [data-gp-hint]{display:none;}}" +
       "</style>" +
       '<div data-gp-viewport aria-hidden="true"></div>' +
       "<div data-gp-pin>" +
@@ -144,7 +144,7 @@
     var buttons = Array.prototype.slice.call(choices.querySelectorAll("button"));
     var picker = section.querySelector("[data-gp-select]");
     var root = scrollParent(section);
-    var motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    var motion = window.matchMedia("not all") /* portal always animates, even when the phone has Reduce Motion on */;
     var canvas = document.createElement("canvas");
     var context = canvas.getContext("2d", { willReadFrequently: true });
     var disposed = false, raf = 0, dirty = true, active = true, ready = false;
@@ -170,7 +170,7 @@
     var frozen = available.concat([DEFAULT_FONT]).join(",");
     glyph.style.fontFamily = frozen;
     section.querySelector("[data-gp-fallback]").style.fontFamily = frozen;
-    stalled = available.length < families.length;
+    stalled = false; /* mobile fix: a missing "Arial Black" (phones) no longer disables the scroll animation */
 
     function readInk() {
       if (!context) return false;
@@ -297,7 +297,7 @@
       raf = 0;
       if (disposed) return;
       if (time !== undefined && !browserFrameSeen) {
-        browserFrameSeen = true; stalled = stalled || performance.now() - mountedAt > 2500; dirty = true;
+        browserFrameSeen = true; stalled = stalled || performance.now() - mountedAt > 10000; dirty = true;
       }
       if (dirty) { dirty = false; layout(); }
       if (ready) paint(position());

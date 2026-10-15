@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <meta name="theme-color" content="#04120e">
 <title>Regen 1o (public release) — Just Talk</title>
 <!-- Apply the saved theme before first paint (same key as the landing page) -->
@@ -19,8 +19,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./Style.css" />
-<link rel="stylesheet" href="./app-mobile.css" />
-<link rel="stylesheet" href="icons.css">
 </head>
 <body>
 
@@ -146,7 +144,7 @@
   <div id="app-shell">
     <div id="sidebar-overlay"></div>
     <div id="sidebar">
-      <button id="newChatBtn" class="new-chat-btn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
+      <button id="newChatBtn" class="new-chat-btn">✎&nbsp;&nbsp;New chat</button>
 
       <!-- Chat history -->
       <div class="side-section-title">Chats</div>
@@ -156,9 +154,9 @@
       <div class="history-list" id="historyList" aria-label="Chat history"></div>
 
       <div class="side-section-title">Menu</div>
-      <button class="side-link" id="backToHub"><span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg></span> Switch model</button>
-      <button class="side-link" id="aboutBtn"><span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></svg></span> About Regen 1o</button>
-      <button class="side-link" id="clearHistoryBtn"><span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V4.5h6V7M7 7l1 13h8l1-13"/></svg></span> Delete all chats</button>
+      <button class="side-link" id="backToHub"><span class="ico">◧</span> Switch model</button>
+      <button class="side-link" id="aboutBtn"><span class="ico">✦</span> About Regen 1o</button>
+      <button class="side-link" id="clearHistoryBtn"><span class="ico">⟲</span> Delete all chats</button>
 
       <div class="side-bottom">
         <div class="profile-card">
@@ -180,7 +178,7 @@
           <div id="creditDisplay" class="credit-value">1000</div>
           <div class="bar-track"><div class="bar-fill" id="creditBar" style="width:100%"></div></div>
         </div>
-        <button class="side-link" id="logoutBtn" style="border:1px solid var(--line);"><span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></svg></span> Sign out</button>
+        <button class="side-link" id="logoutBtn" style="border:1px solid var(--line);"><span class="ico">⏻</span> Sign out</button>
       </div>
     </div>
 
@@ -202,14 +200,14 @@
       </div>
 
       <div id="empty-state">
-        <div class="eyebrow"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg> <b>20B parameters</b> · Groq-hosted inference</div>
+        <div class="eyebrow">⚡ <b>20B parameters</b> · Groq-hosted inference</div>
         <h1>Agent-grade reasoning.<br><span class="hl">Groq-grade speed.</span></h1>
         <p class="lead">Every message is routed, verified against the live web, and shipped with its reasoning. Try one:</p>
         <div class="chip-grid">
-          <button class="chip" data-q="What's today's date?"><span class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><b>What's today's date?</b><span class="pill">01 Temporal</span></button>
-          <button class="chip" data-q="Who are you?"><span class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></span><b>Who are you?</b><span class="pill">02 Identity</span></button>
-          <button class="chip" data-q="Write a 100 word paragraph on black holes"><span class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19z"/><path d="M14.5 6.5l3 3"/></svg></span><b>Write a 100 word paragraph on black holes</b><span class="pill">03 Generation</span></button>
-          <button class="chip" data-q="Who founded Tesla?"><span class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.2 3.5 8.5s-1.1 6.1-3.5 8.5c-2.4-2.4-3.5-5.2-3.5-8.5s1.1-6.1 3.5-8.5z"/></svg></span><b>Who founded Tesla?</b><span class="pill">04 Factual</span></button>
+          <button class="chip" data-q="What's today's date?"><span class="feat-icon">⏱</span><b>What's today's date?</b><span class="pill">01 Temporal</span></button>
+          <button class="chip" data-q="Who are you?"><span class="feat-icon">◎</span><b>Who are you?</b><span class="pill">02 Identity</span></button>
+          <button class="chip" data-q="Write a 100 word paragraph on black holes"><span class="feat-icon">✎</span><b>Write a 100 word paragraph on black holes</b><span class="pill">03 Generation</span></button>
+          <button class="chip" data-q="Who founded Tesla?"><span class="feat-icon">🌐</span><b>Who founded Tesla?</b><span class="pill">04 Factual</span></button>
         </div>
       </div>
 
@@ -226,6 +224,5 @@
   </div>
 </div>
 <script src="main.js"></script>
-<script src="app-mobile.js"></script>
 </body>
 </html>

@@ -1,0 +1,79 @@
+/* Regen 1o app — mobile & tablet layer. Load AFTER Style.css.
+   Desktop (>1024px) is untouched; splash / warp / aurora / meteor animations are not modified. */
+.jt-jump,.jt-edge{display:none}
+
+@media (max-width:1024px){
+  :root{--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+
+  /* keyboard-aware: --vvh / --input-h are set by app-mobile.js from visualViewport */
+  #view-chat{bottom:auto;height:var(--vvh,100dvh)}
+  #header{height:auto;min-height:52px;padding-top:var(--safe-t);
+    padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+  #menuToggle{display:grid;place-items:center;width:44px;height:44px;margin-left:-8px;font-size:22px;border-radius:12px}
+  #menuToggle:active{background:var(--panel-2)}
+  #empty-state{top:calc(52px + var(--safe-t));bottom:var(--input-h,96px);
+    padding:16px clamp(14px,4vw,32px);-webkit-overflow-scrolling:touch}
+  #chat-flow{padding:16px 0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  #input-container{margin-bottom:calc(10px + var(--safe-b));
+    padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  .input-box{padding:8px 10px 8px 16px;border-radius:20px}
+  .input-box input{font-size:16px;min-height:36px}      /* 16px stops iOS zooming on focus */
+  .input-box button{width:40px;height:40px}
+  .input-note{font-size:10.5px;line-height:1.35;margin-top:6px}
+
+  /* drawer */
+  #sidebar{width:min(86vw,320px);padding-top:calc(14px + var(--safe-t));padding-bottom:calc(14px + var(--safe-b));
+    overscroll-behavior:contain;will-change:transform}
+  .side-link,.new-chat-btn,.hist-item{min-height:44px}
+  .hist-act{width:34px;height:34px}
+
+  /* long answers never push the layout sideways */
+  .bubble-container{overflow-wrap:anywhere}
+  .bot-bubble pre,.code-box pre{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .bot-bubble table{display:block;max-width:100%;overflow-x:auto}
+
+  /* login + model hub: scroll instead of clipping on short screens, stay centred when they fit */
+  #view-auth.active,#view-hub.active{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding-top:calc(64px + var(--safe-t));padding-bottom:calc(24px + var(--safe-b))}
+  .auth-card{margin:auto}
+  .hub-head{margin-top:auto}
+  .model-grid{margin-bottom:auto}
+
+  /* jump-to-latest pill */
+  .jt-jump{display:flex;align-items:center;gap:6px;position:absolute;left:50%;bottom:calc(var(--input-h,96px) + 12px);z-index:6;
+    padding:9px 14px 9px 12px;border-radius:99px;border:1px solid rgba(110,231,183,.28);
+    background:rgba(8,26,20,.84);color:var(--text);font:600 12.5px Inter,sans-serif;
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+    opacity:0;pointer-events:none;transform:translate(-50%,12px);
+    transition:opacity .25s,transform .35s cubic-bezier(.16,1,.3,1)}
+  .jt-jump.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+  .jt-jump svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  [data-theme="light"] .jt-jump{background:rgba(255,255,255,.92);border-color:var(--line);box-shadow:0 8px 24px rgba(16,90,64,.16)}
+}
+
+@media (max-width:900px){
+  /* edge grabber: pulses twice the first time, hints that the drawer can be swiped open */
+  body[data-view="view-chat"] .jt-edge{display:block;position:fixed;left:3px;top:50%;width:4px;height:44px;margin-top:-22px;
+    border-radius:4px;background:var(--grad);z-index:4;pointer-events:none;opacity:0;
+    animation:jtEdge 1.6s ease-in-out 1s 2}
+  @keyframes jtEdge{0%,100%{opacity:0;transform:translateX(-6px)}35%,65%{opacity:.9;transform:none}}
+}
+@media (max-width:760px){
+  .brand-row{top:calc(20px + var(--safe-t))}
+  .theme-fixed{top:calc(14px + var(--safe-t))}
+  .hub-top{top:calc(22px + var(--safe-t))}
+}
+@media (max-width:520px){.brand-row{left:16px}}
+
+/* touch: no sticky hover lifts, press feedback instead */
+@media (hover:none){
+  .model-card:hover,.chip:hover,.profile-card:hover,.toggle-card:hover,.credit-card:hover{transform:none}
+  .chip:active,.model-card:not(.disabled):active,.btn:active,.new-chat-btn:active{transform:scale(.97)}
+}
+
+/* landscape phones */
+@media (max-height:520px){
+  .splash-hint{display:none}
+  .splash-warn{bottom:4%}
+  .chip-grid{grid-template-columns:repeat(2,1fr)}
+}

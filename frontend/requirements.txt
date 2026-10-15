@@ -1,0 +1,6 @@
+flask
+flask-cors
+duckduckgo-search
+groq
+gunicorn
+tzdata

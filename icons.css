@@ -1,8 +1,0 @@
-/* Custom line-icon set (replaces emoji / unicode glyph icons). Load after the main stylesheet. */
-.ic{width:1em;height:1em;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.14em}
-.feat-icon .ic{width:18px;height:18px}
-.feat-card .feat-icon{color:#fff}
-body.dark-mode .feat-card .feat-icon{color:#03130f}
-.eyebrow .ic{width:14px;height:14px;color:var(--pink)}
-.side-link .ic{width:16px;height:16px}
-.new-chat-btn .ic{width:16px;height:16px;margin-right:8px;vertical-align:-3px}

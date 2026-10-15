@@ -71,12 +71,47 @@ TEMPORAL_RE = re.compile(
     r"|what time is it|date today)\b"
 )
 
+# Brand names people use for this product (just talk / justtalk / just-talk / regen 1o ...).
+BRAND = r"(?:just\s*-?\s*talk(?:\s*ai)?|justalk|regen(?:\s*1\s*o)?|this\s+(?:app|ai|chatbot|bot|website|site|company|platform))"
+ROLE = r"(?:founder|co-?founder|creator|owner|developer|maker|ceo|inventor|author)"
+
+# "Who are you / what model are you" style questions.
 IDENTITY_RE = re.compile(
     r"(?i)\b(who are you|your name|what is your name|what'?s your name"
-    r"|who (?:made|created|developed|built|founded) you"
-    r"|who (?:is|'s) your (?:founder|developer|creator)"
-    r"|what model are you|which model are you|are you (?:gpt|chatgpt))\b"
+    r"|what model are you|which model are you|are you (?:gpt|chatgpt)"
+    r"|which (?:company|team) (?:made|built|created|developed) you)\b"
 )
+
+# Questions about who made / founded / owns Regen 1o or Just Talk, or about Varun Pant.
+# Names of other companies ("who founded tesla") must NOT match, so a role word only
+# counts when it is tied to "you / your" or to one of our own brand names.
+FOUNDER_RE = re.compile(
+    r"(?i)(?:"
+    # who made/created/built/founded/owns/trained you | regen | just talk
+    rf"\bwho\s+(?:all\s+)?(?:made|created|developed|built|founded|owns?|owned|trained|designed|programmed|invented|started|runs)\s+(?:you|u|{BRAND})\b"
+    # who is behind you / just talk
+    rf"|\bwho(?:'s|\s+is)\s+behind\s+(?:you|{BRAND})\b"
+    # who is your founder / who is the founder of just talk / who's the founder?
+    rf"|\bwho(?:'s|\s+is|\s+are|\s+was)\s+(?:your|the)\s+{ROLE}s?(?:\s+of\s+{BRAND})?\s*[?.!]*\s*$"
+    # founder of just talk / just talk's founder / just talk founder
+    rf"|\b{ROLE}s?\s+of\s+{BRAND}\b"
+    rf"|\b{BRAND}(?:'s)?\s+{ROLE}s?\b"
+    # "your founder", "your creator's name", "name of the founder"
+    rf"|\byour\s+{ROLE}s?\b"
+    rf"|\bname\s+of\s+(?:the|your)\s+{ROLE}\b"
+    rf"|^\s*(?:what(?:'s|\s+is)\s+)?(?:the\s+)?{ROLE}'?s?\s+name\s*[?.!]*\s*$"
+    # Varun Pant by name (short questions only, so "write a story about Varun" is not hijacked)
+    r"|^\s*(?:who(?:'s|\s+is|\s+was)|tell me about|about|what do you know about|do you know)\s+(?:mr\.?\s+)?varun(?:\s+pant)?\s*[?.!]*\s*$"
+    r"|^\s*varun(?:\s+pant)?\s*[?.!]*\s*$"
+    r")"
+)
+
+# "What is Just Talk / Regen 1o?"
+ABOUT_BRAND_RE = re.compile(
+    rf"(?i)^\s*(?:what(?:'s|\s+is)|tell me about|about|explain)\s+{BRAND}\s*[?.!]*\s*$"
+)
+
+FOUNDER_NAME = "Varun Pant"
 
 WEB_CAPABILITY_RE = re.compile(
     r"(?i)\b(do you have (?:web|internet) (?:search|access)|can you search"
@@ -105,12 +140,18 @@ def build_system_prompt(strict_mode=False):
         "Treat this as the true date. Your training data may be out of date, so never "
         "state a year or 'latest' fact from memory. Use the web search results instead.\n\n"
 
-        "Your name is Regen 1o (public release), the AI assistant of Just Talk. "
-        "Regen 1o was developed by justtalk, and its founder is Varun Pant. "
+        "Your name is Regen 1o (public release), the AI assistant made by Just Talk. "
+        "Facts about yourself that are always true: Regen 1o was made by Just Talk, and "
+        "the founder of Just Talk (and of Regen 1o) is Varun Pant. If anyone asks who made, "
+        "created, built, founded, owns or is behind you, Regen 1o or Just Talk, answer "
+        "that Just Talk made you and that its founder is Varun Pant. Never say that "
+        "OpenAI, Groq, Meta, Google or anyone else founded or made Regen 1o. "
+        "You only know that Varun Pant is the founder of Just Talk; if asked for more "
+        "personal details about him, say you do not have them instead of guessing. "
         "Always introduce yourself as Regen 1o. Do not call yourself GPT, ChatGPT, "
         "OpenAI, or JUSTTALK 1.1 ALPHA. If asked what model you run on, answer honestly: "
         "Regen 1o is an alpha variant built on the open-weight openai/gpt-oss-20b model, "
-        "served by Groq.\n\n"
+        "served by Groq. That is the base model, not the maker of Regen 1o.\n\n"
 
         "You have live web search. The server searches the web for current questions and "
         "passes the results to you in the message under 'Web search results'. When those "
@@ -307,16 +348,37 @@ def chat():
             "credits": SYSTEM_CREDITS
         })
 
-    # 2. IDENTITY ROUTER
-    if IDENTITY_RE.search(user_message):
+    # 2. IDENTITY / FOUNDER ROUTER (runs before generation + factual routers so a
+    #    question like "who is the founder of Just Talk" never goes to web search)
+    if FOUNDER_RE.search(user_message) or ABOUT_BRAND_RE.search(user_message) or IDENTITY_RE.search(user_message):
         adjust_credits(50)
-        return jsonify({
-            "reply": (
-                "I am Regen 1o (public release), the AI assistant of Just Talk. "
-                "I was developed by justtalk, and my founder is Varun Pant. "
+        if FOUNDER_RE.search(user_message):
+            asks_person = re.search(r"(?i)\bvarun\b", user_message) is not None
+            if asks_person:
+                reply = (
+                    f"{FOUNDER_NAME} is the founder of Just Talk, the company that made "
+                    "Regen 1o. I don't have any other personal details about him."
+                )
+            else:
+                reply = (
+                    f"Regen 1o was made by Just Talk. Its founder is {FOUNDER_NAME}."
+                )
+        elif ABOUT_BRAND_RE.search(user_message):
+            reply = (
+                f"Just Talk is the company founded by {FOUNDER_NAME}. It makes Regen 1o, an AI "
+                "assistant that routes each message, can verify facts with live web search, "
+                "and shows its reasoning. Regen 1o runs on an alpha variant of the open-weight "
+                "openai/gpt-oss-20b model, served by Groq."
+            )
+        else:
+            reply = (
+                "I am Regen 1o (public release), the AI assistant made by Just Talk. "
+                f"Just Talk's founder is {FOUNDER_NAME}. "
                 "I run on an alpha variant of the open-weight openai/gpt-oss-20b model "
                 "served by Groq, and I can search the web for current information."
-            ),
+            )
+        return jsonify({
+            "reply": reply,
             "thought": f"Identity query matched. +50 Credits Awarded! (Total: {SYSTEM_CREDITS})",
             "response_time": round(time.time() - start_time, 2),
             "credits": SYSTEM_CREDITS

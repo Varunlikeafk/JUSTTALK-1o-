@@ -367,3 +367,104 @@ body.dark-mode #regen-portal [data-gp-field]{background-color:#06241d !important
 body.dark-mode #regen-portal [data-gp-front] p{color:#a9c9c1 !important}
 body.dark-mode #regen-portal [data-gp-front] span{color:#7f9a94 !important}
 body.dark-mode #regen-portal [data-gp-caption] a[data-gp-enter],body.dark-mode #regen-portal [data-gp-caption] a[data-gp-enter] span{color:#03130f !important}
+
+
+/* =========================================================================
+   MOBILE + TABLET LAYER (landing page)
+   ========================================================================= */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:hidden;}
+body{max-width:100%;}
+button,a,.faq-q,.code-tab{touch-action:manipulation;}
+header{padding-top:env(safe-area-inset-top,0px);}
+.wrap{padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px));}
+footer{padding-bottom:calc(50px + env(safe-area-inset-bottom,0px));}
+
+/* inputs: 16px stops iOS from zooming the page when the demo terminal is focused */
+@media (pointer:coarse){
+  .term-foot input{font-size:16px;}
+  .term-foot button{width:44px;height:44px;}
+  .theme-toggle{width:44px;height:44px;}
+  .btn{min-height:46px;}
+  .faq-q{min-height:48px;}
+  .code-tab{padding:9px 14px;}
+}
+@media (hover:none){
+  .feat-card:hover,.theme-toggle:hover{transform:none;}
+}
+
+/* tablets */
+@media (min-width:761px) and (max-width:1100px){
+  .nav-links{gap:18px;font-size:13px;}
+  .hero{padding:56px 0 30px;}
+  .hero-grid{gap:34px;}
+  .hero p.lead{max-width:56ch;}
+  .term{max-width:680px;width:100%;margin:0 auto;}
+  section.block{padding:56px 0;}
+  .net-stats{margin-top:190px;}
+}
+
+/* phones */
+@media (max-width:760px){
+  .wrap{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));}
+  header nav{padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));gap:10px;}
+  .brand{font-size:15px;white-space:nowrap;}
+  .nav-cta{padding:10px 14px;font-size:12.5px;white-space:nowrap;}
+
+  .hero{padding:34px 0 24px;}
+  .hero-grid{gap:30px;}
+  .hero h1{margin-bottom:14px;}
+  .hero p.lead{font-size:15px;margin-bottom:22px;}
+  .cta-row{gap:10px;}
+  .cta-row .btn{flex:1 1 100%;justify-content:center;}
+  .eyebrow{font-size:11.5px;padding:5px 12px;margin-bottom:16px;}
+
+  .term-body{min-height:200px;max-height:300px;font-size:12.5px;padding:14px 14px 8px;}
+  .term-meta{flex-wrap:wrap;gap:4px;}
+
+  .stats{gap:12px;margin:34px 0;}
+  .stat-card{padding:16px 14px;}
+  .stat-card .num{font-size:22px;}
+
+  .marquee-wrap{margin:6px -6px 44px;}
+  section.block{padding:44px 0;}
+  .block > p.desc{margin-bottom:26px;}
+
+  .router-step{padding:8px 12px;font-size:12px;}
+  .credit-card2{padding:18px;}
+
+  .net-card{padding:28px 20px;min-height:0;border-radius:16px;}
+  .net-stats{margin-top:150px;gap:10px;}
+  .net-pill{padding:10px 14px;flex:1 1 0;min-width:84px;}
+  .net-pill b{font-size:17px;}
+
+  .feat-card{padding:18px;}
+  .ticket{padding:20px;}
+  .ticket-num{font-size:52px;}
+  .ticket-rows{gap:12px 14px;}
+  .ticket-rows div b{overflow-wrap:anywhere;}
+  .code-panel pre{font-size:11.5px;padding:14px;}
+
+  .faq-item.open .faq-a{max-height:420px;}   /* 220px clipped the answers once text wraps on narrow screens */
+  .faq-q{padding:14px 16px;font-size:14px;gap:12px;}
+  .faq-q .plus{flex-shrink:0;}
+
+  .cta-panel{padding:38px 22px;border-radius:20px;}
+  .cta-panel p{font-size:14.5px;}
+  footer{flex-direction:column;align-items:flex-start;}
+  footer .flinks{flex-wrap:wrap;gap:12px 20px;}
+}
+@media (max-width:380px){
+  .stats{grid-template-columns:1fr 1fr;}
+  .ticket-rows{grid-template-columns:1fr;}
+  .brand{font-size:14px;}
+  .nav-cta{padding:9px 11px;}
+}
+@media (max-width:900px){
+  .bg-glow span{filter:blur(70px);}
+}
+
+/* touch: the "Choose a letter" picker overlapped the "Scroll for a closer look" hint in the REGEN intro */
+@media (pointer:coarse){
+  #regen-portal [data-gp-touch-picker]{bottom:calc(18px + env(safe-area-inset-bottom,0px)) !important;}
+  #regen-portal [data-gp-front] span{inset:auto 24px calc(84px + env(safe-area-inset-bottom,0px)) !important;}
+}

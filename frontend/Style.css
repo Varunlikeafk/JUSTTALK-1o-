@@ -679,3 +679,12 @@ body[data-view="view-warp"] .theme-fixed{display:none;}
   background:#04372a;color:#b9f5df;font:700 14px 'Space Grotesk',sans-serif;
 }
 @media (max-width:760px){.splash-warn{bottom:10%;font-size:12.5px;}}
+
+/* ---- Just Talk logo mark (mask, inherits text colour: white on dark, black on light) ---- */
+.brand-mark,.brand-row .brand-mark{width:30px;height:30px;border-radius:0;background:currentColor;-webkit-mask:url(assets/logo-mark.png) center/contain no-repeat;mask:url(assets/logo-mark.png) center/contain no-repeat;border:0;box-shadow:none;overflow:visible;flex-shrink:0;display:inline-block;font-size:0;color:var(--text)}
+.brand-row .brand-mark{width:26px;height:26px}
+
+/* Just Talk wordmark in logo font */
+.brand-word{display:inline-block;height:32px;aspect-ratio:675/380;background:currentColor;color:var(--text);-webkit-mask:url(assets/logo-word.png) center/contain no-repeat;mask:url(assets/logo-word.png) center/contain no-repeat;font-size:0;flex-shrink:0}
+.brand-word.sm{height:22px}
+.brand-row{gap:12px}

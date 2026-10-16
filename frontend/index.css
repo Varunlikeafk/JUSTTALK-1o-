@@ -367,3 +367,12 @@ body.dark-mode #regen-portal [data-gp-field]{background-color:#06241d !important
 body.dark-mode #regen-portal [data-gp-front] p{color:#a9c9c1 !important}
 body.dark-mode #regen-portal [data-gp-front] span{color:#7f9a94 !important}
 body.dark-mode #regen-portal [data-gp-caption] a[data-gp-enter],body.dark-mode #regen-portal [data-gp-caption] a[data-gp-enter] span{color:#03130f !important}
+
+/* ---- Just Talk logo mark (mask, inherits text colour: black on light, white on dark) ---- */
+.brand-mark,body.dark-mode .brand-mark{width:30px;height:30px;border-radius:0;background:currentColor;-webkit-mask:url(assets/logo-mark.png) center/contain no-repeat;mask:url(assets/logo-mark.png) center/contain no-repeat;border:0;box-shadow:none;overflow:visible;flex-shrink:0;display:inline-block;font-size:0;color:var(--text)}
+body.dark-mode .brand-mark::after{display:none}
+body.dark-mode .brand-mark{filter:drop-shadow(0 0 6px rgba(117,255,191,.35))}
+
+/* Just Talk wordmark in logo font */
+.brand-word{display:inline-block;height:32px;aspect-ratio:675/380;background:currentColor;color:var(--text);-webkit-mask:url(assets/logo-word.png) center/contain no-repeat;mask:url(assets/logo-word.png) center/contain no-repeat;font-size:0;flex-shrink:0}
+.brand-word.sm{height:22px}

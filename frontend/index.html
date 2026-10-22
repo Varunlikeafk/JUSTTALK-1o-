@@ -10,10 +10,23 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/favicon.png">
 <link rel="stylesheet" href="index.css">
+<link rel="stylesheet" href="index-mobile.css">
+<link rel="stylesheet" href="enhance.css">
+<link rel="stylesheet" href="icons.css">
 
 
 
 
+<style>
+/* Added: starfield behind the landing page, and styles for the Get started steps */
+.main-stars { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.wrap { position: relative; z-index: 1; }
+.start-steps { list-style: none; margin: 8px 0 0; padding: 0; counter-reset: gs; max-width: 62ch; }
+.start-steps li { counter-increment: gs; display: grid; grid-template-columns: 32px 1fr; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(16,24,20,.07); color: var(--text-dim); font-size: 15px; line-height: 1.6; }
+.start-steps li:last-child { border-bottom: 0; }
+.start-steps li::before { content: counter(gs); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 12px 'Space Grotesk', sans-serif; color: var(--pink); border: 1px solid rgba(16,163,127,.45); }
+.start-steps b { color: var(--text); font-weight: 600; }
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--orange)"/><stop offset="1" style="stop-color:var(--violet)"/></linearGradient><symbol id="tsym" viewBox="0 0 20 24"><g fill="url(#tg)"><rect x="0" y="0" width="20" height="5.2" rx="1.8"/><rect x="7.4" y="0" width="5.2" height="24" rx="1.8"/><rect x="2.6" y="11.2" width="14.8" height="3.4" rx="1.4"/></g></symbol></defs></svg>
@@ -30,9 +43,9 @@
       <a href="#faq">FAQ</a>
     </div>
     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light mode" title="Switch theme">
-  <span class="theme-icon moon">☾</span><span class="theme-icon sun">☀</span>
+  <span class="theme-icon moon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span><span class="theme-icon sun"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>
 </button>
-<a class="nav-cta" href="app.html">Launch app →</a>
+<a class="nav-cta" href="app.html">Open app</a>
   </nav>
 </header>
 
@@ -46,11 +59,11 @@
   <section class="hero">
     <div class="hero-grid">
       <div>
-        <div class="eyebrow">⚡ <b>20B parameters</b> · Groq-hosted inference</div>
+        <div class="eyebrow"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg> <b>20B parameters</b> · Groq-hosted inference</div>
         <h1>Agent-grade reasoning.<br><span class="hl">Groq-grade speed.</span></h1>
         <p class="lead">Just <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>alk routes every message, verifies facts against the live web, and shows you exactly how it got there — powered by GPT‑OSS‑20B on Groq.</p>
         <div class="cta-row">
-          <a class="btn btn-solid" href="app.html">Start chatting →</a>
+          <a class="btn btn-solid" href="app.html">Start chatting</a>
           <a class="btn btn-ghost" href="#router">See how it thinks</a>
         </div>
       </div>
@@ -146,33 +159,33 @@
 
     <div class="feat-grid">
       <div class="feat-card">
-        <div class="feat-icon">⚡</div>
+        <div class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
         <h3>Groq inference</h3>
         <p>Runs on Groq's LPU hardware for fast, streaming-ready responses.</p>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">🔎</div>
+        <div class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
         <h3>Live web search</h3>
         <p>Optional DuckDuckGo lookups ground factual and generation queries in current sources.</p>
         <div class="pill-row"><span class="pill">force_google_scrape()</span><span class="pill">maybe_scrape()</span></div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">🧭</div>
+        <div class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 0-8H10a4 4 0 0 1 0-8h6"/></svg></div>
         <h3>Five-stage routing</h3>
         <p>Temporal, identity, generation, factual, and fallback routers — each with its own logic.</p>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">🧠</div>
+        <div class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7"/></svg></div>
         <h3>Visible reasoning</h3>
         <p>Reasoning is requested in parsed form and shown in a collapsible trace, not thrown away.</p>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">💾</div>
+        <div class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></div>
         <h3>Persistent credits</h3>
         <p>A reliability score saved to disk — survives restarts and reloads, not reset to 1000 every session.</p>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">🔓</div>
+        <div class="feat-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></svg></div>
         <h3>Self-hostable</h3>
         <p>Flask + CORS underneath. Point the frontend at your own server and run it anywhere.</p>
       </div>
@@ -220,6 +233,18 @@ console.log(data.reply, data.thought, data.credits);</pre>
     </div>
   </section>
 
+  <!-- ================= GET STARTED (added) ================= -->
+  <section class="block" id="start">
+    <div class="eyebrow-tag">// Get started</div>
+    <h2>Four steps to <i>your first answer.</i></h2>
+    <ol class="start-steps">
+      <li><span>Select <b>Open app</b> at the top of this page.</span></li>
+      <li><span>On the model page, choose <b>Regen 1o</b>. <b>Regen Adaptive</b> is not available yet.</span></li>
+      <li><span>Sign in, or select <b>Continue as guest</b> to try it without an account.</span></li>
+      <li><span>Type your question and send it. Use the <b>Web Search</b> switch in the sidebar to turn live verification on or off. Turning it off does not change your credits.</span></li>
+    </ol>
+  </section>
+
   <!-- ================= FAQ ================= -->
   <section class="block" id="faq">
     <div class="faq-grid">
@@ -255,7 +280,7 @@ console.log(data.reply, data.thought, data.credits);</pre>
       <h2>Ask fast.<br>Verify faster.</h2>
       <p>Chat with Just <svg class="tglyph" aria-hidden="true" viewBox="0 0 20 24"><use href="#tsym"/></svg>alk directly — live web verification and visible reasoning included.</p>
       <div class="cta-row">
-        <a class="btn btn-solid" href="app.html">Start chatting →</a>
+        <a class="btn btn-solid" href="app.html">Start chatting</a>
         <a class="btn btn-ghost" href="#top">Back to the top</a>
       </div>
     </div>
@@ -274,7 +299,51 @@ console.log(data.reply, data.thought, data.credits);</pre>
 
 <script src="index.js"></script>
 <script src="demo.js"></script>
+<script src="index-mobile.js"></script>
 
 
+<script>
+/* Added: starfield. Stars follow the current theme and stay still if reduced motion is on. */
+(function () {
+  var c = document.createElement('canvas');
+  c.className = 'main-stars';
+  c.setAttribute('aria-hidden', 'true');
+  document.body.insertBefore(c, document.body.firstChild);
+  var ctx = c.getContext('2d'), stars = [], W = 0, H = 0, t = 0;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function size() {
+    W = window.innerWidth; H = window.innerHeight;
+    c.width = W * dpr; c.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var n = Math.round(W * H / 9000);
+    stars = [];
+    for (var i = 0; i < n; i++) {
+      stars.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.1 + 0.3,
+                   s: Math.random() * 0.6 + 0.15, p: Math.random() * Math.PI * 2 });
+    }
+  }
+  function isDark() {
+    return document.body.classList.contains('dark-mode') || document.documentElement.getAttribute('data-theme') === 'dark';
+  }
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var col = isDark() ? '230,255,245' : '16,90,64';
+    t += 0.016;
+    for (var i = 0; i < stars.length; i++) {
+      var st = stars[i];
+      var a = reduce ? 0.6 : 0.3 + 0.6 * Math.abs(Math.sin(t * st.s + st.p));
+      ctx.beginPath();
+      ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + col + ',' + a.toFixed(3) + ')';
+      ctx.fill();
+    }
+    if (!reduce) window.requestAnimationFrame(draw);
+  }
+  size();
+  draw();
+  window.addEventListener('resize', function () { size(); if (reduce) draw(); });
+})();
+</script>
 </body>
 </html>

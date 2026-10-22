@@ -1,0 +1,31 @@
+/* Enhancements for the Just Talk landing and About pages.
+   Loaded after index.css and index-mobile.css. Only adds polish; does not change colours or theme. */
+
+/* Keyboard focus that is visible on the dark and light backgrounds */
+:focus-visible { outline: 2px solid var(--pink); outline-offset: 3px; border-radius: 4px; }
+
+/* Anchored sections clear the sticky header */
+section[id] { scroll-margin-top: 80px; }
+
+/* One load sequence on the hero: text and demo rise in together */
+@keyframes jt-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.hero .hero-grid > div { animation: jt-rise .7s cubic-bezier(.2,.7,.2,1) both; }
+.hero .hero-grid > div + div { animation-delay: .12s; }
+
+/* FAQ answers ease in when opened */
+.faq-item.open .faq-a p { animation: jt-rise .35s cubic-bezier(.2,.7,.2,1) both; }
+
+/* Inner pages (About) */
+.about-body { max-width: 68ch; margin-top: 8px; }
+.about-body h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+.about-body p { color: var(--text-dim); font-size: 15px; line-height: 1.65; }
+.about-body p + p { margin-top: 12px; }
+.about-body ul { margin: 12px 0 0; padding-left: 20px; color: var(--text-dim); font-size: 15px; line-height: 1.65; }
+.about-body li + li { margin-top: 6px; }
+.about-body a { color: var(--violet); text-decoration: underline; text-underline-offset: 3px; }
+.about-note { margin-top: 24px; padding: 14px 18px; border-left: 3px solid var(--pink); background: rgba(16,24,20,.03); border-radius: 0 10px 10px 0; }
+.about-note p { color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

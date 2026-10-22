@@ -312,9 +312,37 @@ document.getElementById("backToHub").addEventListener("click", () => {
   closeSidebarMobile();
   enterHub();
 });
-document.getElementById("aboutBtn").addEventListener("click", () => {
-  alert("Regen 1 Alpha runs GPT-OSS-20B via Groq with optional live web verification. System credits track answer reliability: verified or successful answers earn credits, and only genuine verification failures cost credits (going offline or turning search off never does).");
-});
+// About opens an in-page panel (browsers can block alert() dialogs, which made this button look dead).
+const ABOUT_TEXT = "Regen 1 Alpha runs GPT-OSS-20B via Groq with optional live web verification. System credits track answer reliability: verified or successful answers earn credits, and only genuine verification failures cost credits (going offline or turning search off never does).";
+function openAbout() {
+  closeSidebarMobile();
+  let m = document.getElementById("aboutModal");
+  if (!m) {
+    const st = document.createElement("style");
+    st.textContent =
+      "#aboutModal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.6)}" +
+      "#aboutModal.show{display:flex}" +
+      "#aboutModal .about-card{width:min(460px,100%);background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:24px 24px 20px;box-shadow:0 24px 70px rgba(0,0,0,.45)}" +
+      "#aboutModal h3{font-family:'Space Grotesk',sans-serif;font-size:18px;margin-bottom:10px}" +
+      "#aboutModal p{color:var(--text-dim);font-size:14px;line-height:1.65}" +
+      "#aboutModal .about-close{margin-top:18px;width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font:600 14px Inter,sans-serif;cursor:pointer}";
+    document.head.appendChild(st);
+    m = document.createElement("div");
+    m.id = "aboutModal";
+    m.setAttribute("role", "dialog");
+    m.setAttribute("aria-modal", "true");
+    m.setAttribute("aria-labelledby", "aboutTitle");
+    m.innerHTML = '<div class="about-card"><h3 id="aboutTitle">About Regen 1o</h3><p></p><button type="button" class="about-close">Close</button></div>';
+    m.querySelector("p").textContent = ABOUT_TEXT;
+    m.addEventListener("click", (e) => { if (e.target === m) m.classList.remove("show"); });
+    m.querySelector(".about-close").addEventListener("click", () => m.classList.remove("show"));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") m.classList.remove("show"); });
+    document.body.appendChild(m);
+  }
+  m.classList.add("show");
+  m.querySelector(".about-close").focus();
+}
+document.getElementById("aboutBtn").addEventListener("click", openAbout);
 document.getElementById("clearHistoryBtn").addEventListener("click", () => {
   closeSidebarMobile();
   clearAllConvos();

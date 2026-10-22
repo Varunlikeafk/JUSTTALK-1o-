@@ -18,7 +18,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 groq_client = Groq(api_key=GROQ_API_KEY)
 
-MODEL_ID = "openai/gpt-oss-120b"
+MODEL_ID = "openai/gpt-oss-20b"
 IST = ZoneInfo("Asia/Kolkata")
 
 # ---------------------------------------------------------------------------
@@ -236,7 +236,7 @@ def generate_llama_response(prompt_text, history_list, strict_mode=False):
             messages=messages,
             temperature=0.6,
             max_tokens=4096,
-            reasoning_effort="low",
+            reasoning_effort="medium",
             reasoning_format="parsed",
         )
         message = completion.choices[0].message

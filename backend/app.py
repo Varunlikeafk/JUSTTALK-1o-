@@ -18,7 +18,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 groq_client = Groq(api_key=GROQ_API_KEY)
 
-MODEL_ID = "llama3-70b-8192"
+MODEL_ID = "openai/gpt-oss-120b"
 IST = ZoneInfo("Asia/Kolkata")
 
 # ---------------------------------------------------------------------------

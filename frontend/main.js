@@ -480,10 +480,55 @@ function resetToFreshIfNeeded(wasActive) {
   loadHistoryIntoUI();
 }
 
-function deleteConvo(id) {
+// In-page confirm panel (replaces the browser's confirm() popup). Resolves true on Delete, false otherwise.
+function askConfirm(title, text, okLabel) {
+  return new Promise((resolve) => {
+    if (!document.getElementById("confirmStyle")) {
+      const st = document.createElement("style");
+      st.id = "confirmStyle";
+      st.textContent =
+        "#confirmModal{position:fixed;inset:0;z-index:110;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.6)}" +
+        "#confirmModal .cf-card{width:min(420px,100%);background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:24px 24px 20px;box-shadow:0 24px 70px rgba(0,0,0,.45)}" +
+        "#confirmModal h3{font-family:'Space Grotesk',sans-serif;font-size:18px;margin-bottom:10px;overflow-wrap:anywhere}" +
+        "#confirmModal p{color:var(--text-dim);font-size:14px;line-height:1.6}" +
+        "#confirmModal .cf-row{display:flex;gap:10px;margin-top:20px}" +
+        "#confirmModal button{flex:1;padding:11px;border-radius:10px;font:600 14px Inter,sans-serif;cursor:pointer;min-height:44px}" +
+        "#confirmModal .cf-no{border:1px solid var(--line);background:var(--panel-2);color:var(--text)}" +
+        "#confirmModal .cf-yes{border:none;background:var(--grad);color:#0a0a0d}";
+      document.head.appendChild(st);
+    }
+    const prev = document.activeElement;
+    const m = document.createElement("div");
+    m.id = "confirmModal";
+    m.setAttribute("role", "alertdialog");
+    m.setAttribute("aria-modal", "true");
+    m.setAttribute("aria-labelledby", "cfTitle");
+    m.innerHTML = '<div class="cf-card"><h3 id="cfTitle"></h3><p></p><div class="cf-row"><button type="button" class="cf-no">Cancel</button><button type="button" class="cf-yes"></button></div></div>';
+    m.querySelector("h3").textContent = title;
+    m.querySelector("p").textContent = text;
+    m.querySelector(".cf-yes").textContent = okLabel || "Delete";
+    const done = (v) => {
+      document.removeEventListener("keydown", onKey, true);
+      m.remove();
+      if (prev && prev.focus) { try { prev.focus(); } catch (e) {} }
+      resolve(v);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") { e.stopPropagation(); done(false); }
+    };
+    m.addEventListener("click", (e) => { if (e.target === m) done(false); });
+    m.querySelector(".cf-no").addEventListener("click", () => done(false));
+    m.querySelector(".cf-yes").addEventListener("click", () => done(true));
+    document.addEventListener("keydown", onKey, true);
+    document.body.appendChild(m);
+    m.querySelector(".cf-no").focus();
+  });
+}
+
+async function deleteConvo(id) {
   const c = convoStore.convos.find(x => x.id === id);
   if (!c) return;
-  if (!confirm(`Delete "${c.title}"? This can't be undone.`)) return;
+  if (!(await askConfirm("Delete this chat?", `"${c.title}" will be removed. This can't be undone.`, "Delete"))) return;
   const wasActive = id === convoStore.activeId;
   convoStore.convos = convoStore.convos.filter(x => x.id !== id);
   resetToFreshIfNeeded(wasActive);
@@ -491,8 +536,8 @@ function deleteConvo(id) {
   renderHistoryList();
 }
 
-function clearAllConvos() {
-  if (!confirm("Delete ALL your chats? This can't be undone.")) return;
+async function clearAllConvos() {
+  if (!(await askConfirm("Delete all chats?", "All your chats will be removed. This can't be undone.", "Delete all"))) return;
   convoStore.convos = [];
   resetToFreshIfNeeded(true);
   saveConvos();

@@ -124,6 +124,7 @@ def build_system_prompt(strict_mode=False):
         "something, clearly say you are unsure instead of inventing facts, names, dates, "
         "or figures. When you write code or any multi-line snippet meant to be copied, "
         "always wrap it in a fenced code block with triple backticks and the language name."
+        " Do not call any tool or function. Answer in plain text only."
     )
     if strict_mode:
         prompt += (
@@ -238,6 +239,7 @@ def generate_llama_response(prompt_text, history_list, strict_mode=False):
             max_tokens=4096,
             reasoning_effort="medium",
             reasoning_format="parsed",
+            tool_choice="none",
         )
         message = completion.choices[0].message
         content = message.content

@@ -3,6 +3,8 @@ import json
 import datetime
 import time
 import re
+import urllib.request as _urlreq
+import urllib.parse as _urlparse
 from zoneinfo import ZoneInfo
 
 from flask import Flask, request, jsonify
@@ -103,11 +105,11 @@ def build_system_prompt(strict_mode=False):
     prompt = (
         f"Current date and time: {now.strftime('%A, %B %d, %Y, %I:%M %p')} IST (India). "
         "Treat this as the true date. Your training data may be out of date, so never "
-        "state a year or 'latest' fact from memory. Use the web search results instead.\n\n"
+        "state a year or 'latest' fact from memory. If web search results are given in the message, use them.\n\n"
 
         "Your name is Regen 1o (public release), the AI assistant of Just Talk. "
         "Regen 1o was developed by justtalk, and its founder is Varun Pant. "
-        "Introduce yourself as Regen 1o only when the user asks who or what you are. Do not call yourself GPT, ChatGPT, "
+        "Always introduce yourself as Regen 1o. Do not call yourself GPT, ChatGPT, "
         "OpenAI, or JUSTTALK 1o. If asked what model you run on, answer honestly: "
         "Regen 1o is an alpha variant built on the open-weight openai/gpt-oss-20b model, "
         "served by Groq.\n\n"
@@ -115,7 +117,7 @@ def build_system_prompt(strict_mode=False):
         "Web search results, when provided, appear in the message under 'Web search results'. "
         "When those results are present, base current facts on them and name the source URL. "
         "If no results are provided, say that you are answering from your own knowledge and it "
-        "may be out of date.\n\n"
+        "may be out of date. Never call a tool or function; reply in plain text.\n\n"
 
         "Strictly follow any word count, length, or format constraints specified in the "
         "user's request (for example '200 words' or '3 paragraphs') and match them as "
@@ -123,7 +125,6 @@ def build_system_prompt(strict_mode=False):
         "something, clearly say you are unsure instead of inventing facts, names, dates, "
         "or figures. When you write code or any multi-line snippet meant to be copied, "
         "always wrap it in a fenced code block with triple backticks and the language name."
-        " Reply in plain text only."
     )
     if strict_mode:
         prompt += (
@@ -166,6 +167,38 @@ def extract_clean_topic(user_input, history=None):
 # ---------------------------------------------------------------------------
 # WEB SEARCH
 # ---------------------------------------------------------------------------
+WIKI_API = "https://en.wikipedia.org/w/api.php"
+WIKI_SUMMARY = "https://en.wikipedia.org/api/rest_v1/page/summary/"
+
+
+def _http_json(url):
+    req = _urlreq.Request(url, headers={"User-Agent": "RegenBot/1.0 (justtalk)"})
+    with _urlreq.urlopen(req, timeout=8) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def wiki_search(query):
+    """No-key fallback: Wikipedia summaries, in the same shape as DDG results."""
+    try:
+        hits = _http_json(
+            f"{WIKI_API}?action=opensearch&search={_urlparse.quote(query)}&limit=2&format=json"
+        )
+        titles = hits[1] if len(hits) > 1 else []
+        results = []
+        for title in titles[:2]:
+            s = _http_json(WIKI_SUMMARY + _urlparse.quote(title.replace(" ", "_")))
+            body = (s.get("extract") or "").strip()
+            if body:
+                results.append({
+                    "title": s.get("title", title),
+                    "href": s.get("content_urls", {}).get("desktop", {}).get("page", "Wikipedia"),
+                    "body": body,
+                })
+        return results
+    except Exception:
+        return []
+
+
 def web_search(query, web_search_enabled=True):
     """Return (results, ok, info).
 
@@ -177,11 +210,13 @@ def web_search(query, web_search_enabled=True):
 
     clean_q = re.sub(WEB_FILLER_RE, " ", query)
     clean_q = re.sub(r"\s+", " ", clean_q).strip() or query
+    base_q = clean_q
 
     is_current = bool(CURRENT_INFO_RE.search(query))
     if is_current:
         clean_q = f"{clean_q} {now_ist().year}"
 
+    ddg_info = "No search snippets returned."
     try:
         with DDGS() as ddgs:
             results = []
@@ -195,7 +230,6 @@ def web_search(query, web_search_enabled=True):
         results = [r for r in results if r.get("body")]
         if results:
             return results, True, results[0].get("href", "Web Stream")
-        return None, False, "No search snippets returned."
     except Exception as e:
         err_str = str(e)
         offline_signals = ["NameResolutionError", "ConnectionError", "Max retries",
@@ -203,7 +237,13 @@ def web_search(query, web_search_enabled=True):
                            "getaddrinfo failed", "RatelimitException"]
         is_offline = any(sig.lower() in err_str.lower() for sig in offline_signals)
         prefix = "OFFLINE:" if is_offline else "ERROR:"
-        return None, False, f"{prefix}{err_str}"
+        ddg_info = f"{prefix}{err_str}"
+
+    # DuckDuckGo gave nothing or failed: try Wikipedia (no key needed).
+    wiki = wiki_search(base_q)
+    if wiki:
+        return wiki, True, wiki[0].get("href", "Wikipedia")
+    return None, False, ddg_info
 
 
 def web_context_block(results):
@@ -219,50 +259,51 @@ def web_context_block(results):
 # ---------------------------------------------------------------------------
 # MODEL CALL
 # ---------------------------------------------------------------------------
-FALLBACK_MODEL_ID = os.getenv("FALLBACK_MODEL_ID", "llama-3.3-70b-versatile")
-
-
-def _call_groq(model_id, messages, is_gpt_oss):
-    params = dict(model=model_id, messages=messages, temperature=0.6, max_tokens=4096)
-    if is_gpt_oss:
-        params.update(reasoning_effort="medium", reasoning_format="parsed")
-    return groq_client.chat.completions.create(**params)
-
-
-def generate_llama_response(prompt_text, history_list, strict_mode=False):
-    messages = [{"role": "system", "content": build_system_prompt(strict_mode)}]
-    for turn in history_list[-12:]:
-        role = "user" if turn.get("role") == "user" else "assistant"
-        content = turn.get("content", "")
-        if content:
-            messages.append({"role": role, "content": content})
-    messages.append({"role": "user", "content": prompt_text})
-
-    # 1. Primary model (gpt-oss). If Groq rejects it because the model tried a
-    #    built-in tool, move to the fallback model, which has no built-in tools.
-    # 2. Any other error: report it as before.
+def generate_llama_response(prompt_text, history_list, strict_mode=False, _retried=False):
     try:
-        completion = _call_groq(MODEL_ID, messages, is_gpt_oss=True)
-    except Exception as e:
-        if "tool_use_failed" not in str(e):
-            return f"Model Error: {str(e)}", False, ""
-        try:
-            completion = _call_groq(FALLBACK_MODEL_ID, messages, is_gpt_oss=False)
-        except Exception as e2:
-            return f"Model Error (fallback {FALLBACK_MODEL_ID}): {str(e2)}", False, ""
+        messages = [{"role": "system", "content": build_system_prompt(strict_mode)}]
 
-    message = completion.choices[0].message
-    content = message.content
-    reasoning = getattr(message, "reasoning", None) or ""
+        for turn in history_list[-12:]:
+            role = "user" if turn.get("role") == "user" else "assistant"
+            content = turn.get("content", "")
+            if content:
+                messages.append({"role": role, "content": content})
 
-    if not content or not content.strip():
-        return (
-            "Model Error: Empty response. The model used its token budget on internal "
-            "reasoning and returned no visible answer. Try a shorter request.",
-            False,
-            reasoning,
+        messages.append({"role": "user", "content": prompt_text})
+
+        completion = groq_client.chat.completions.create(
+            model=MODEL_ID,
+            messages=messages,
+            temperature=0.6,
+            max_tokens=4096,
+            reasoning_effort="medium",
+            reasoning_format="parsed",
         )
-    return content.strip(), True, reasoning.strip()
+        message = completion.choices[0].message
+        content = message.content
+        reasoning = getattr(message, "reasoning", None) or ""
+
+        if not content or not content.strip():
+            return (
+                "Model Error: Empty response — the model used its full token "
+                "budget on internal reasoning and returned no visible answer. "
+                "Try a shorter/simpler request.",
+                False,
+                reasoning,
+            )
+
+        return content.strip(), True, reasoning.strip() if reasoning else ""
+    except Exception as e:
+        # Groq rejects the reply when the model tries a built-in tool. Retry once
+        # with the same model and an explicit plain-text instruction.
+        if "tool_use_failed" in str(e) and not _retried:
+            return generate_llama_response(
+                "Answer in plain text only. Do not use any tool, search, or browsing.\n\n" + prompt_text,
+                history_list,
+                strict_mode,
+                _retried=True,
+            )
+        return f"Model Error: {str(e)}", False, ""
 
 
 def build_thought(base_log, reasoning):

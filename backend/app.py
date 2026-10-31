@@ -112,10 +112,9 @@ def build_system_prompt(strict_mode=False):
         "Regen 1o is an alpha variant built on the open-weight openai/gpt-oss-20b model, "
         "served by Groq.\n\n"
 
-        "You have live web search. The server searches the web for current questions and "
-        "passes the results to you in the message under 'Web search results'. When those "
-        "results are present, base current facts on them and name the source URL. If no "
-        "results are provided, say that you are answering from your own knowledge and it "
+        "Web search results, when provided, appear in the message under 'Web search results'. "
+        "When those results are present, base current facts on them and name the source URL. "
+        "If no results are provided, say that you are answering from your own knowledge and it "
         "may be out of date.\n\n"
 
         "Strictly follow any word count, length, or format constraints specified in the "
@@ -124,7 +123,7 @@ def build_system_prompt(strict_mode=False):
         "something, clearly say you are unsure instead of inventing facts, names, dates, "
         "or figures. When you write code or any multi-line snippet meant to be copied, "
         "always wrap it in a fenced code block with triple backticks and the language name."
-        " Never call any tool or function; answer in plain text only."
+        " Reply in plain text only."
     )
     if strict_mode:
         prompt += (
@@ -220,50 +219,50 @@ def web_context_block(results):
 # ---------------------------------------------------------------------------
 # MODEL CALL
 # ---------------------------------------------------------------------------
+FALLBACK_MODEL_ID = os.getenv("FALLBACK_MODEL_ID", "llama-3.3-70b-versatile")
+
+
+def _call_groq(model_id, messages, is_gpt_oss):
+    params = dict(model=model_id, messages=messages, temperature=0.6, max_tokens=4096)
+    if is_gpt_oss:
+        params.update(reasoning_effort="medium", reasoning_format="parsed")
+    return groq_client.chat.completions.create(**params)
+
+
 def generate_llama_response(prompt_text, history_list, strict_mode=False):
+    messages = [{"role": "system", "content": build_system_prompt(strict_mode)}]
+    for turn in history_list[-12:]:
+        role = "user" if turn.get("role") == "user" else "assistant"
+        content = turn.get("content", "")
+        if content:
+            messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": prompt_text})
+
+    # 1. Primary model (gpt-oss). If Groq rejects it because the model tried a
+    #    built-in tool, move to the fallback model, which has no built-in tools.
+    # 2. Any other error: report it as before.
     try:
-        messages = [{"role": "system", "content": build_system_prompt(strict_mode)}]
-
-        for turn in history_list[-12:]:
-            role = "user" if turn.get("role") == "user" else "assistant"
-            content = turn.get("content", "")
-            if content:
-                messages.append({"role": role, "content": content})
-
-        messages.append({"role": "user", "content": prompt_text})
-
-        completion = groq_client.chat.completions.create(
-            model=MODEL_ID,
-            messages=messages,
-            temperature=0.6,
-            max_tokens=4096,
-            reasoning_effort="medium",
-            reasoning_format="parsed",
-        )
-        message = completion.choices[0].message
-        content = message.content
-        reasoning = getattr(message, "reasoning", None) or ""
-
-        if not content or not content.strip():
-            return (
-                "Model Error: Empty response — the model used its full token "
-                "budget on internal reasoning and returned no visible answer. "
-                "Try a shorter/simpler request.",
-                False,
-                reasoning,
-            )
-
-        return content.strip(), True, reasoning.strip() if reasoning else ""
+        completion = _call_groq(MODEL_ID, messages, is_gpt_oss=True)
     except Exception as e:
-        # Groq sometimes rejects a reply because the model tried a built-in
-        # browser tool. Retry once with a plain-text instruction.
-        if "tool_use_failed" in str(e) and not prompt_text.startswith("[RETRY]"):
-            return generate_llama_response(
-                "[RETRY] Answer in plain text without any tool or browsing. " + prompt_text,
-                history_list,
-                strict_mode,
-            )
-        return f"Model Error: {str(e)}", False, ""
+        if "tool_use_failed" not in str(e):
+            return f"Model Error: {str(e)}", False, ""
+        try:
+            completion = _call_groq(FALLBACK_MODEL_ID, messages, is_gpt_oss=False)
+        except Exception as e2:
+            return f"Model Error (fallback {FALLBACK_MODEL_ID}): {str(e2)}", False, ""
+
+    message = completion.choices[0].message
+    content = message.content
+    reasoning = getattr(message, "reasoning", None) or ""
+
+    if not content or not content.strip():
+        return (
+            "Model Error: Empty response. The model used its token budget on internal "
+            "reasoning and returned no visible answer. Try a shorter request.",
+            False,
+            reasoning,
+        )
+    return content.strip(), True, reasoning.strip()
 
 
 def build_thought(base_log, reasoning):

@@ -12,34 +12,20 @@ Setup:
      https://justtalk-1o-1.onrender.com
      (RENDER_EXTERNAL_URL is used automatically if it is set and KEEP_ALIVE_URL is not.)
 """
-
-import logging
-import os
 import threading
 import time
 import urllib.request
 
-log = logging.getLogger("keep_alive")
+URL = "https://justtalk-1o-1.onrender.com/health"
 
 
 def start_keep_alive():
-    """Start the background ping thread. Does nothing if no URL is configured."""
-    base = os.getenv("KEEP_ALIVE_URL") or os.getenv("RENDER_EXTERNAL_URL")
-    if not base:
-        log.info("Keep-alive disabled: set KEEP_ALIVE_URL (or RENDER_EXTERNAL_URL).")
-        return
-
-    url = base.rstrip("/") + "/health"
-    interval = int(os.getenv("KEEP_ALIVE_INTERVAL", "600"))
-
-    def loop():
+    def ping_forever():
         while True:
-            time.sleep(interval)
+            time.sleep(600)  # 10 minutes
             try:
-                with urllib.request.urlopen(url, timeout=30) as resp:
-                    log.info("keep-alive ping %s -> %s", url, resp.status)
-            except Exception as exc:  # never let the thread die
-                log.warning("keep-alive ping failed: %s", exc)
+                urllib.request.urlopen(URL, timeout=30)
+            except Exception:
+                pass
 
-    threading.Thread(target=loop, name="keep-alive", daemon=True).start()
-    log.info("Keep-alive started: pinging %s every %ss", url, interval)
+    threading.Thread(target=ping_forever, daemon=True).start()

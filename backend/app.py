@@ -12,8 +12,18 @@ from flask_cors import CORS
 from duckduckgo_search import DDGS
 from groq import Groq
 
+from keep_alive import start_keep_alive
+
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}, 200
+
+
+start_keep_alive()  # pings /health every 10 min so Render free tier does not sleep
 
 # GROQ API CLIENT INTEGRATION
 # Read from the environment. Never commit the key to a public repo.
